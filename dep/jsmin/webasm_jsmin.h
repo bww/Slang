@@ -41,11 +41,11 @@
  * Minifier context
  */
 typedef struct jsmin_context {
-	char A;
-	char B;
-	char lookahead;
-	char *in;
-	char *out;
+  char          A;
+  char          B;
+  char          lookahead;
+  const char  * in;
+  char        * out;
 } jsmin_context;
 
 /**

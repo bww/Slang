@@ -36,6 +36,9 @@
 
 #include "webasm_jsmin.h"
 
+#include <string.h>
+#include <stdlib.h>
+
 /*
   isAlphanum -- return true if the character is a letter, digit, underscore,
   dollar sign, or non-ASCII character.
@@ -68,7 +71,7 @@ static char get(jsmin_context *s) {
 
 static void write_char(jsmin_context *s, const char c) {
   *(s->out) = c;
-	*(s->out)++;
+	s->out++;
 }
 
 /* peek -- get the next character without getting it. */
@@ -103,7 +106,8 @@ static char next(jsmin_context *s) {
           }
           break;
         case '\0':
-          rb_raise(rb_eStandardError, "unterminated comment");
+          abort();
+          //rb_raise(rb_eStandardError, "unterminated comment");
         }
       }
     default:
@@ -140,7 +144,8 @@ static void action(jsmin_context *s, int d) {
           s->A = get(s);
         }
         if (s->A == '\0') {
-          rb_raise(rb_eStandardError, "unterminated string literal");
+          abort();
+          //rb_raise(rb_eStandardError, "unterminated string literal");
         }
       }
     }
@@ -167,7 +172,8 @@ static void action(jsmin_context *s, int d) {
               s->A = get(s);
             }
             if (s->A == '\0') {
-              rb_raise(rb_eStandardError, "unterminated set in regex literal");
+              abort();
+              //rb_raise(rb_eStandardError, "unterminated set in regex literal");
             }
           }
         } else if (s->A == '/') {
@@ -177,7 +183,8 @@ static void action(jsmin_context *s, int d) {
           s->A = get(s);
         }
         if (s->A == '\0') {
-          rb_raise(rb_eStandardError, "unterminated regex literal");
+          abort();
+          //rb_raise(rb_eStandardError, "unterminated regex literal");
         }
         write_char(s, s->A);
       }
@@ -276,10 +283,10 @@ char * jsmin_minify(const char *source) {
     return NULL;
   }
   
-  s.in = source;
+  s.in  = source;
   s.out = minified;
   jsmin(&s);
   
-  return s.out;
+  return minified;
 }
 
