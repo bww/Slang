@@ -45,30 +45,40 @@ import (
 )
 
 /**
+ * Resource mimetypes
+ */
+var MIMETYPES = map[string]string {
+  ".scss":  "text/css",
+  ".css":   "text/css",
+  ".ejs":   "application/javascript",
+  ".js":    "application/javascript",
+}
+
+/**
  * A server
  */
 type Server struct {
-  Port    int
-  Prefix  string
-  Route   string
+  port    int
+  peer    string
+  routes  map[string]string
   proxy   *httputil.ReverseProxy
 }
 
 /**
  * Create a server
  */
-func NewServer(port int, prefix, route string) (*Server, error) {
+func NewServer(port int, peer string, routes map[string]string) (*Server, error) {
   var proxy *httputil.ReverseProxy = nil
   
-  if route != "" {
-    if u, err := url.Parse(route); err != nil {
+  if peer != "" {
+    if u, err := url.Parse(peer); err != nil {
       return nil, err
     }else{
       proxy = httputil.NewSingleHostReverseProxy(u)
     }
   }
   
-  return &Server{port, prefix, route, proxy}, nil
+  return &Server{port, peer, routes, proxy}, nil
 }
 
 /**
@@ -76,7 +86,7 @@ func NewServer(port int, prefix, route string) (*Server, error) {
  */
 func (s *Server) Run() {
   http.HandleFunc("/", s.handler)
-  http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
+  http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
 }
 
 /**
@@ -103,34 +113,63 @@ func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request)
 }
 
 /**
+ * Route a request
+ */
+func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
+  candidates := make([]string, 0)
+  absolute := request.URL.Path
+  var mimetype string
+  
+  for k, v := range s.routes {
+    if strings.HasPrefix(absolute, k) {
+      absolute = path.Join(v, absolute[len(k):])
+      break
+    }
+  }
+  
+  ext := path.Ext(absolute)
+  relative := absolute[1:]
+  
+  switch ext {
+    case ".css":
+      candidates = append(candidates, relative[:len(relative) - len(ext)] +".scss", relative)
+    case ".js":
+      candidates = append(candidates, relative[:len(relative) - len(ext)] +".ejs", relative)
+    default:
+      candidates = append(candidates, relative)
+  }
+  
+  if mimetype = MIMETYPES[ext]; mimetype == "" {
+    mimetype = "text/plain"
+  }
+  
+  return candidates, mimetype, nil
+}
+
+/**
  * Serve a request
  */
 func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request) {
+  var candidates []string
+  var mimetype string
   var file *os.File
-  var source string
   var err error
   
-  ext := path.Ext(request.URL.Path)
-  relative := request.URL.Path[1:]
-  
-  switch path.Ext(request.URL.Path) {
-    case ".css":
-      source = relative[:len(relative) - len(ext)] +".scss"
-    case ".js":
-      source = relative[:len(relative) - len(ext)] +".ejs"
-    default:
-      source = relative
+  if candidates, mimetype, err = s.routeRequest(request); err != nil {
+    s.serveError(writer, request, 404, fmt.Errorf("Could not map resource: %s", request.URL.Path))
+    return
   }
   
-  fmt.Println(relative, "->", source)
-  
-  if file, err = os.Open(source); err == nil {
-    s.compileAndServeFile(writer, request, file)
-  }else if file, err = os.Open(relative); err == nil {
-    s.compileAndServeFile(writer, request, file)
-  }else{
-    s.serveError(writer, request, 404, fmt.Errorf("No such resource: %s", request.URL.Path))
+  for _, e := range candidates {
+    fmt.Println(request.URL.Path, "->", e)
+    if file, err = os.Open(e); err == nil {
+      writer.Header().Add("Content-Type", mimetype)
+      s.compileAndServeFile(writer, request, file)
+      return
+    }
   }
+  
+  s.serveError(writer, request, 404, fmt.Errorf("No such resource: %s", request.URL.Path))
   
 }
 
