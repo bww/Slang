@@ -42,8 +42,8 @@ func main() {
   cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
   fServer := cmdline.Bool("server", false, "Run the builtin server")
   fPort   := cmdline.Int("port", 9090, "The port to run the builtin server on")
-  fProxy  := cmdline.String("proxy", ":8080", "The address to proxy")
-  //fConfig := cmdline.String("config", "", "The configuration file to use")
+  fProxy  := cmdline.String("proxy", "http://localhost:8080/", "The address to proxy")
+  fPath   := cmdline.String("prefix", ".", "The path to prefix resources with")
   cmdline.Parse(os.Args[1:]);
   
   context := Context{}
@@ -52,7 +52,7 @@ func main() {
     var server *Server
     var err error
     
-    if server, err = NewServer(*fPort, *fProxy); err != nil {
+    if server, err = NewServer(*fPort, *fPath, *fProxy); err != nil {
       fmt.Println(err)
       return
     }

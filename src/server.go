@@ -49,6 +49,7 @@ import (
  */
 type Server struct {
   Port    int
+  Prefix  string
   Route   string
   proxy   *httputil.ReverseProxy
 }
@@ -56,18 +57,18 @@ type Server struct {
 /**
  * Create a server
  */
-func NewServer(port int, route string) (*Server, error) {
+func NewServer(port int, prefix, route string) (*Server, error) {
   var proxy *httputil.ReverseProxy = nil
   
   if route != "" {
-    if u, err := url.Parse(fmt.Sprintf("http://%s/", route)); err != nil {
+    if u, err := url.Parse(route); err != nil {
       return nil, err
     }else{
       proxy = httputil.NewSingleHostReverseProxy(u)
     }
   }
   
-  return &Server{port, route, proxy}, nil
+  return &Server{port, prefix, route, proxy}, nil
 }
 
 /**
