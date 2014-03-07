@@ -1,8 +1,8 @@
 
 export CC := clang
-export CGO_LDFLAGS := -L../dep/libsass -lc -lc++ -lsass
+export CGO_LDFLAGS := -lc -lc++ -L../dep/libsass -lsass -L../dep/jsmin -ljsmin
 
-SOURCES=webasm.go compiler.go compiler_sass.go
+SOURCES=webasm.go compiler.go compiler_sass.go compiler_jsmin.go
 
 all: webasm
 

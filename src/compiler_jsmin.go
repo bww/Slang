@@ -31,36 +31,49 @@
 package main
 
 import (
-  "os"
   "io"
   "fmt"
-  "flag"
+  "unsafe"
+  "io/ioutil"
 )
 
-func main() {
+/*
+#include <stdlib.h>
+#include "../dep/jsmin/webasm_jsmin.h"
+*/
+import "C"
+
+/**
+ * A JSMin compiler
+ */
+type JSMinCompiler struct {
+  // ...
+}
+
+/**
+ * Compile JSMin
+ */
+func (c JSMinCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+  fmt.Println("-->", inpath)
+  var source *C.char
+  var minified *C.char
   
-  cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  //fConfig := cmdline.String("config", "", "The configuration file to use")
-  cmdline.Parse(os.Args[1:]);
-  
-  for _, f := range cmdline.Args() {
-    var input io.Reader
-    var err error
-    
-    if input, err = os.Open(f); err != nil {
-      fmt.Println(err)
-      return
-    }
-    
-    //compiler := &SassCompiler{}
-    compiler := &JSMinCompiler{}
-    
-    if err := compiler.Compile(Context{}, f, f +".out", input, nil); err != nil {
-      fmt.Println(err)
-      return
-    }
-    
+  if c, err := ioutil.ReadAll(input); err != nil {
+    return err
+  }else if source = C.CString(string(c)); source == nil {
+    return fmt.Errorf("Input source is invalid")
+  }else{
+    defer C.free(unsafe.Pointer(source))
   }
   
+  if minified = C.jsmin_minify(source); minified == nil {
+    return fmt.Errorf("Could not compile input")
+  }else{
+    defer C.free(unsafe.Pointer(minified))
+  }
+  
+  fmt.Println(C.GoString(minified))
+  
+  return nil
 }
 
