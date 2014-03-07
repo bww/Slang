@@ -169,7 +169,14 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
     }
   }
   
-  s.serveError(writer, request, 404, fmt.Errorf("No such resource: %s", request.URL.Path))
+  // make this a flag or something...
+  strict := false
+  
+  if strict {
+    s.serveError(writer, request, 404, fmt.Errorf("No such resource: %s", request.URL.Path))
+  }else{
+    s.proxyRequest(writer, request)
+  }
   
 }
 
