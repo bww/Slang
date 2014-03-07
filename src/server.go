@@ -156,7 +156,7 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
   }else{
     params := map[string]interface{} {
       "Title": "Error",
-      "Header": fmt.Sprintf("%d: An error occured", status),
+      "Header": fmt.Sprintf("%d: %s", status, http.StatusText(status)),
       "Detail": problem,
     }
     writer.WriteHeader(status)
