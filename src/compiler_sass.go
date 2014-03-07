@@ -39,7 +39,9 @@ import (
 
 /*
 #include <stdlib.h>
-#include "../dep/libsass/sass.h"
+#include "../dep/libsass/sass_interface.h"
+
+const char *SASS_EMTPY_STRING = "";
 */
 import "C"
 
@@ -54,31 +56,35 @@ type SassCompiler struct {
  * Compile SASS
  */
 func (c SassCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
-  var sass *C.struct_Sass_Context
+  var sass *C.struct_sass_context
+  var options C.struct_sass_options
   
   fmt.Println("-->", inpath)
   
-  if sass = C.make_sass_context(); sass == nil {
+  if sass = C.sass_new_context(); sass == nil {
     return fmt.Errorf("Could not create SASS context")
   }else{
-    defer C.free_sass_context(sass)
+    defer C.sass_free_context(sass)
   }
   
   if c, err := ioutil.ReadAll(input); err != nil {
     return err
+  }else if sass.source_string = C.CString(string(c)); sass.source_string == nil {
+    return fmt.Errorf("Input source is invalid")
   }else{
-    sass.input_string = C.CString(string(c))
-    defer C.free(unsafe.Pointer(sass.input_string))
+    defer C.free(unsafe.Pointer(sass.source_string))
   }
   
-  sass.output_style = C.SASS_OUTPUT_EXPANDED
+  options.include_paths = C.SASS_EMTPY_STRING
+  options.image_path = C.SASS_EMTPY_STRING
+  sass.options = options
   
-  C.compile_sass_string(sass)
+  C.sass_compile(sass)
   
   if sass.error_status != 0 {
     return fmt.Errorf("Could not compile SASS: %s", C.GoString(sass.error_message))
   }else if sass.output_string != nil {
-    fmt.Println("RESULT:", C.GoString(sass.output_string))
+    fmt.Println(C.GoString(sass.output_string))
   }else{
     return fmt.Errorf("An unknown error occured; SASS produced no output")
   }
