@@ -31,58 +31,23 @@
 package main
 
 import (
-  "os"
-  "io"
   "fmt"
-  "flag"
+  "strings"
 )
 
-func main() {
-  
-  cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  fServer := cmdline.Bool   ("server",  false,                    "Run the builtin server")
-  fPort   := cmdline.Int    ("port",    9090,                     "The port to run the builtin server on")
-  fPeer   := cmdline.String ("proxy",   "http://localhost:8080/", "The address to proxy")
-  fRoutes := make(AssocParams)
-  cmdline.Var(&fRoutes, "route", "Routes, formatted as '<remote>=<local>'")
-  cmdline.Parse(os.Args[1:]);
-  
-  context := Context{}
-  
-  if(*fServer){
-    var server *Server
-    var err error
-    
-    if server, err = NewServer(*fPort, *fPeer, fRoutes); err != nil {
-      fmt.Println(err)
-      return
-    }
-    
-    server.Run()
-    
+type AssocParams map[string]string
+
+func (a *AssocParams) String() string {
+  return fmt.Sprintf("%v", *a)
+}
+
+func (a *AssocParams) Set(value string) error {
+  if i := strings.Index(value, "="); i > 0 {
+    whitespace := " \n"
+    (*a)[strings.Trim(value[:i], whitespace)] = strings.Trim(value[i+1:], whitespace)
+    return nil
   }else{
-    for _, f := range cmdline.Args() {
-      var compiler Compiler
-      var input io.Reader
-      var err error
-      
-      if input, err = os.Open(f); err != nil {
-        fmt.Println(err)
-        return
-      }
-      
-      if compiler, err = NewCompiler(context, f); err != nil {
-        fmt.Println(err)
-        return
-      }
-      
-      if err := compiler.Compile(context, f, f +".out", input, os.Stdout); err != nil {
-        fmt.Println(err)
-        return
-      }
-      
-    }
+    return fmt.Errorf("Parameters must be formatted as '<key>=<value>'")
   }
-  
 }
 
