@@ -21,8 +21,9 @@ If you are using Web Assembler in tandem with an app server you need to provide 
 
 	$ webasm -server -proxy http://localhost:8080/
 
-In either case Web Assembler looks for resources relative to the directory you run it in. If your app server maps assets Web Assembler manages to a different path than the files are on disk, you can provide explicit route mappings for Web Assembler.
+In either case Web Assembler looks for resources relative to the directory you run it in. If your app server maps any assets that Web Assembler manages to a different path than they exist in the filesystem, you can provide explicit route mappings.
 
 	$ webasm -server -proxy http://localhost:8080/ -route /assets/css=/stylesheets
 
-In this example, the URL `http://localhost/assets/css/style.css` would be mapped to the file under `./stylesheets/style.css`.
+In this example, the URL `http://localhost:9090/assets/css/style.css` would be mapped to the file at `./stylesheets/style.css`.
+
