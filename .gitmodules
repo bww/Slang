@@ -1,3 +1,6 @@
 [submodule "dep/libsass"]
 	path = dep/libsass
 	url = https://github.com/hcatlin/libsass.git
+[submodule "dep/jsmin"]
+	path = dep/jsmin
+	url = https://github.com/douglascrockford/JSMin.git
