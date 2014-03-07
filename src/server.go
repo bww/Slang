@@ -40,6 +40,7 @@ import (
   "net/url"
   "net/http"
   "net/http/httputil"
+  "html/template"
 )
 
 /**
@@ -122,7 +123,7 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
   }else if file, err = os.Open(relative); err == nil {
     s.compileAndServeFile(writer, request, file)
   }else{
-    s.serveError(writer, request, 404, fmt.Errorf("Could not map resource: %s", request.URL.Path))
+    s.serveError(writer, request, 404, fmt.Errorf("No such resource: %s", request.URL.Path))
   }
   
 }
@@ -146,9 +147,20 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
 /**
  * Serve an error
  */
-func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, err error) {
-  fmt.Println(err)
-  writer.WriteHeader(status)
-  writer.Write([]byte(err.Error()))
+func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, problem error) {
+  fmt.Println(problem)
+  if t, err := template.ParseFiles("resources/html/error.html"); err != nil {
+    fmt.Printf("Could not compile template: %v\n", err)
+    writer.WriteHeader(status)
+    writer.Write([]byte(problem.Error()))
+  }else{
+    params := map[string]interface{} {
+      "Title": "Error",
+      "Header": fmt.Sprintf("%d: An error occured", status),
+      "Detail": problem,
+    }
+    writer.WriteHeader(status)
+    t.Execute(writer, params)
+  }
 }
 
