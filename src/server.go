@@ -31,57 +31,68 @@
 package main
 
 import (
-  "os"
-  "io"
   "fmt"
-  "flag"
+  "path"
 )
 
-func main() {
+import (
+  "net/url"
+  "net/http"
+  "net/http/httputil"
+)
+
+/**
+ * A server
+ */
+type Server struct {
+  Port    int
+  Route   string
+  proxy   *httputil.ReverseProxy
+}
+
+/**
+ * Create a server
+ */
+func NewServer(port int, route string) (*Server, error) {
+  var proxy *httputil.ReverseProxy = nil
   
-  cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  fServer := cmdline.Bool("server", false, "Run the builtin server")
-  fPort   := cmdline.Int("port", 9090, "The port to run the builtin server on")
-  fProxy  := cmdline.String("proxy", ":8080", "The address to proxy")
-  //fConfig := cmdline.String("config", "", "The configuration file to use")
-  cmdline.Parse(os.Args[1:]);
-  
-  context := Context{}
-  
-  if(*fServer){
-    var server *Server
-    var err error
-    
-    if server, err = NewServer(*fPort, *fProxy); err != nil {
-      fmt.Println(err)
-      return
-    }
-    
-    server.Run()
-    
-  }else{
-    for _, f := range cmdline.Args() {
-      var compiler Compiler
-      var input io.Reader
-      var err error
-      
-      if input, err = os.Open(f); err != nil {
-        fmt.Println(err)
-        return
-      }
-      
-      if compiler, err = NewCompiler(context, f); err != nil {
-        fmt.Println(err)
-        return
-      }
-      
-      if err := compiler.Compile(context, f, f +".out", input, os.Stdout); err != nil {
-        fmt.Println(err)
-        return
-      }
-      
+  if route != "" {
+    if u, err := url.Parse(fmt.Sprintf("http://%s/", route)); err != nil {
+      return nil, err
+    }else{
+      proxy = httputil.NewSingleHostReverseProxy(u)
     }
   }
   
+  return &Server{port, route, proxy}, nil
 }
+
+/**
+ * Run the server
+ */
+func (s *Server) Run() {
+  http.HandleFunc("/", s.handler)
+  http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
+}
+
+/**
+ * Handle a request
+ */
+func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
+  switch path.Ext(request.URL.Path) {
+    case ".scss", ".js":
+      fmt.Println("SPECIAL", request.URL.Path)
+    default:
+      s.proxyRequest(writer, request)
+  }
+}
+
+/**
+ * Proxy a request
+ */
+func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request) {
+  s.proxy.ServeHTTP(writer, request)
+}
+
+
 
