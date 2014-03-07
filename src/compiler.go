@@ -32,6 +32,8 @@ package main
 
 import (
   "io"
+  "fmt"
+  "path"
 )
 
 /**
@@ -46,5 +48,19 @@ type Context struct {
  */
 type Compiler interface {
   Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error
+}
+
+/**
+ * Create the default compiler for the specified file
+ */
+func NewCompiler(context Context, inpath string) (Compiler, error) {
+  switch path.Ext(inpath) {
+    case ".scss":
+      return &SassCompiler{}, nil
+    case ".js":
+      return &JSMinCompiler{}, nil
+    default:
+      return nil, fmt.Errorf("Input file is not supported: %s", inpath)
+  }
 }
 

@@ -43,7 +43,10 @@ func main() {
   //fConfig := cmdline.String("config", "", "The configuration file to use")
   cmdline.Parse(os.Args[1:]);
   
+  context := Context{}
+  
   for _, f := range cmdline.Args() {
+    var compiler Compiler
     var input io.Reader
     var err error
     
@@ -52,10 +55,12 @@ func main() {
       return
     }
     
-    //compiler := &SassCompiler{}
-    compiler := &JSMinCompiler{}
+    if compiler, err = NewCompiler(context, f); err != nil {
+      fmt.Println(err)
+      return
+    }
     
-    if err := compiler.Compile(Context{}, f, f +".out", input, nil); err != nil {
+    if err := compiler.Compile(context, f, f +".out", input, os.Stdout); err != nil {
       fmt.Println(err)
       return
     }

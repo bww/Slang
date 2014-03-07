@@ -38,6 +38,7 @@ import (
 )
 
 /*
+#include <string.h>
 #include <stdlib.h>
 #include "../dep/jsmin/webasm_jsmin.h"
 */
@@ -54,9 +55,8 @@ type JSMinCompiler struct {
  * Compile JSMin
  */
 func (c JSMinCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
-  fmt.Println("-->", inpath)
-  var source *C.char
   var minified *C.char
+  var source *C.char
   
   if c, err := ioutil.ReadAll(input); err != nil {
     return err
@@ -72,7 +72,9 @@ func (c JSMinCompiler) Compile(context Context, inpath, outpath string, input io
     defer C.free(unsafe.Pointer(minified))
   }
   
-  fmt.Println(C.GoString(minified))
+  if _, err := output.Write(C.GoBytes(unsafe.Pointer(minified), C.int(C.strlen(minified)))); err != nil {
+    return err
+  }
   
   return nil
 }

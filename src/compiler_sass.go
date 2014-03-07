@@ -38,6 +38,7 @@ import (
 )
 
 /*
+#include <string.h>
 #include <stdlib.h>
 #include "../dep/libsass/sass_interface.h"
 
@@ -58,8 +59,6 @@ type SassCompiler struct {
 func (c SassCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   var sass *C.struct_sass_context
   var options C.struct_sass_options
-  
-  fmt.Println("-->", inpath)
   
   if sass = C.sass_new_context(); sass == nil {
     return fmt.Errorf("Could not create SASS context")
@@ -83,10 +82,10 @@ func (c SassCompiler) Compile(context Context, inpath, outpath string, input io.
   
   if sass.error_status != 0 {
     return fmt.Errorf("Could not compile SASS: %s", C.GoString(sass.error_message))
-  }else if sass.output_string != nil {
-    fmt.Println(C.GoString(sass.output_string))
-  }else{
+  }else if sass.output_string == nil {
     return fmt.Errorf("An unknown error occured; SASS produced no output")
+  }else if _, err := output.Write(C.GoBytes(unsafe.Pointer(sass.output_string), C.int(C.strlen(sass.output_string)))); err != nil {
+    return err
   }
   
   return nil

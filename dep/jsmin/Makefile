@@ -25,12 +25,6 @@ libjsmin.so: $(OBJECTS)
 %: %.o libjsmin.a
 	$(CC) $(CCFLAGS) -o $@ $+ $(LDFLAGS)
 
-install: libjsmin.a
-	install -Dpm0755 $< $(DESTDIR)$(LIBDIR)/$<
-
-install-shared: libjsmin.so
-	install -Dpm0755 $< $(DESTDIR)$(LIBDIR)/$<
-
 clean:
 	rm -f $(OBJECTS) *.a *.so
 
