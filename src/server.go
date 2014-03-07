@@ -31,6 +31,7 @@
 package main
 
 import (
+  "os"
   "fmt"
   "path"
 )
@@ -80,8 +81,8 @@ func (s *Server) Run() {
  */
 func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
   switch path.Ext(request.URL.Path) {
-    case ".scss", ".js":
-      fmt.Println("SPECIAL", request.URL.Path)
+    case ".css", ".scss", ".js":
+      s.serveRequest(writer, request)
     default:
       s.proxyRequest(writer, request)
   }
@@ -94,5 +95,77 @@ func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request)
   s.proxy.ServeHTTP(writer, request)
 }
 
+/**
+ * Serve a request
+ */
+func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request) {
+  switch path.Ext(request.URL.Path) {
+    case ".css":
+      s.serveCounterpart(writer, request)
+    case ".scss":
+      s.serveProcessed(writer, request)
+    case ".js":
+      s.serveCounterpart(writer, request)
+    case ".ejs":
+      s.serveProcessed(writer, request)
+    default:
+      s.proxyRequest(writer, request)
+  }
+}
 
+/**
+ * Serve a request
+ */
+func (s *Server) serveCounterpart(writer http.ResponseWriter, request *http.Request) {
+  
+}
+
+/**
+ * Serve a request
+ */
+func (s *Server) serveProcessed(writer http.ResponseWriter, request *http.Request) {
+  var file *os.File
+  var err error
+  
+  fmt.Println("->", request.URL.Path)
+  
+  context := Context{}
+  
+  if len(request.URL.Path) < 1 {
+    fmt.Printf("Invalid path: %s\n", request.URL.Path)
+    s.serveError(writer, request, 400, fmt.Errorf("Invalid path: %s\n", request.URL.Path));
+    return
+  }
+  
+  relative := request.URL.Path
+  
+  if relative[0] == '/' {
+    relative = relative[1:]
+  }
+  
+  if file, err = os.Open(relative); err != nil {
+    fmt.Printf("Could not open file: %v\n", err)
+    s.serveError(writer, request, 404, err);
+    return
+  }
+  
+  if compiler, err := NewCompiler(context, request.URL.Path); err != nil {
+    fmt.Printf("Resource is not supported: %v\n", err)
+    s.serveError(writer, request, 400, fmt.Errorf("Resource is not supported: %s", relative));
+    return
+  }else if err := compiler.Compile(context, "", "", file, writer); err != nil {
+    fmt.Printf("Could not compile resource: %v\n", err)
+    s.serveError(writer, request, 500, fmt.Errorf("Could not compile resource: %v", err));
+    return
+  }
+  
+}
+
+/**
+ * Serve an error
+ */
+func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, err error) {
+  writer.WriteHeader(status)
+  writer.Write([]byte(err.Error()))
+}
 
