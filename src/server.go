@@ -34,6 +34,7 @@ import (
   "os"
   "fmt"
   "path"
+  "strings"
 )
 
 import (
@@ -81,11 +82,15 @@ func (s *Server) Run() {
  * Handle a request
  */
 func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
-  switch path.Ext(request.URL.Path) {
-    case ".css", ".scss", ".ejs", ".js":
-      s.serveRequest(writer, request)
-    default:
-      s.proxyRequest(writer, request)
+  if strings.ToUpper(request.Method) == "GET" {
+    switch path.Ext(request.URL.Path) {
+      case ".css", ".scss", ".ejs", ".js":
+        s.serveRequest(writer, request)
+      default:
+        s.proxyRequest(writer, request)
+    }
+  }else{
+    s.proxyRequest(writer, request)
   }
 }
 
@@ -149,6 +154,7 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
  */
 func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, problem error) {
   fmt.Println(problem)
+  
   if t, err := template.ParseFiles("resources/html/error.html"); err != nil {
     fmt.Printf("Could not compile template: %v\n", err)
     writer.WriteHeader(status)
@@ -162,5 +168,6 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
     writer.WriteHeader(status)
     t.Execute(writer, params)
   }
+  
 }
 
