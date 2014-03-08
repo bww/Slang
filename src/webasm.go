@@ -59,6 +59,7 @@ func main() {
       return
     }
     
+    fmt.Printf("Starting Webasm on port %d\n", *fPort)
     server.Run()
     
   }else{

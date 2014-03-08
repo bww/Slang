@@ -33,6 +33,7 @@ package main
 import (
   "os"
   "fmt"
+  "log"
   "path"
   "strings"
 )
@@ -40,7 +41,6 @@ import (
 import (
   "net/url"
   "net/http"
-  "net/http/httputil"
   "html/template"
 )
 
@@ -61,20 +61,20 @@ type Server struct {
   port    int
   peer    string
   routes  map[string]string
-  proxy   *httputil.ReverseProxy
+  proxy   *ReverseProxy
 }
 
 /**
  * Create a server
  */
 func NewServer(port int, peer string, routes map[string]string) (*Server, error) {
-  var proxy *httputil.ReverseProxy = nil
+  var proxy *ReverseProxy = nil
   
   if peer != "" {
     if u, err := url.Parse(peer); err != nil {
       return nil, err
     }else{
-      proxy = httputil.NewSingleHostReverseProxy(u)
+      proxy = NewSingleHostReverseProxy(u)
     }
   }
   
@@ -109,7 +109,9 @@ func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
  * Proxy a request
  */
 func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request) {
-  s.proxy.ServeHTTP(writer, request)
+  if err := s.proxy.ServeHTTP(writer, request); err != nil {
+    s.serveError(writer, request, http.StatusBadGateway, err)
+  }
 }
 
 /**
@@ -200,8 +202,7 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
  * Serve an error
  */
 func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, problem error) {
-  fmt.Println(problem)
-  
+  log.Println(problem)
   if t, err := template.ParseFiles("resources/html/error.html"); err != nil {
     fmt.Printf("Could not compile template: %v\n", err)
     writer.WriteHeader(status)
@@ -215,6 +216,5 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
     writer.WriteHeader(status)
     t.Execute(writer, params)
   }
-  
 }
 
