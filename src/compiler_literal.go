@@ -32,37 +32,23 @@ package main
 
 import (
   "io"
-  "fmt"
-  "path"
 )
 
 /**
- * Compilation context
+ * A "literal" (passthrough) compiler
  */
-type Context struct {
+type LiteralCompiler struct {
   // ...
 }
 
 /**
- * A compiler
+ * Compile passthrough
  */
-type Compiler interface {
-  Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error
-}
-
-/**
- * Create the default compiler for the specified file
- */
-func NewCompiler(context Context, inpath string) (Compiler, error) {
-  switch path.Ext(inpath) {
-    case ".scss":
-      return &SassCompiler{}, nil
-    case ".ejs":
-      return &EJSCompiler{}, nil
-    case ".js":
-      return &JSMinCompiler{}, nil
-    default:
-      return nil, fmt.Errorf("Input file is not supported: %s", inpath)
+func (c LiteralCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+  if _, err := io.Copy(output, input); err != nil {
+    return err
+  }else{
+    return nil
   }
 }
 
