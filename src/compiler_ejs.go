@@ -36,6 +36,7 @@ import (
 	"path"
   "regexp"
   "io/ioutil"
+  "ejs"
 )
 
 import (
@@ -60,11 +61,11 @@ func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.R
     return err
   }
   
-  scanner := NewScanner(string(source))
+  scanner := ejs.NewScanner(inpath, string(source))
   outer:
   for {
     
-    var toks []Token
+    var toks []ejs.Token
     if toks, err = scanner.Token(); err != nil {
       return err
     }
@@ -72,15 +73,15 @@ func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.R
     for _, tok := range toks {
       switch tok.Type {
         
-        case tokenTypeEOF:
+        case ejs.TokenTypeEOF:
           break outer
           
-        case tokenTypeVerbatim:
+        case ejs.TokenTypeVerbatim:
           if _, err := output.Write([]byte(tok.Text)); err != nil {
             return err
           }
         
-        case tokenTypeImport:
+        case ejs.TokenTypeImport:
           if err := c.emitImport(context, inpath, outpath, output, tok.Text); err != nil {
             return err
           }
