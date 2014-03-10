@@ -38,11 +38,16 @@ import (
   "strings"
 )
 
+const (
+  compilerOptionNone        = 0
+  compilerOptionVerbose     = 1 << 0
+)
+
 /**
  * Compilation context
  */
 type Context struct {
-  // ...
+  Options   int
 }
 
 /**
@@ -113,7 +118,7 @@ func NewCompiler(context Context, inpath string) (Compiler, error) {
     case ".js":
       return &LiteralCompiler{}, nil
     default:
-      return nil, fmt.Errorf("Input file is not supported: %s", inpath)
+      return &LiteralCompiler{}, nil
   }
   
 }

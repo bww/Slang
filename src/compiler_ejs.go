@@ -100,6 +100,11 @@ func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.R
  * Emit an import
  */
 func (c EJSCompiler) emitImport(context Context, inpath, outpath string, output io.Writer, resource string) error {
+  
+  if _, err := output.Write([]byte(fmt.Sprintf("/* #import \"%s\" */\n", inpath))); err != nil {
+    return err
+  }
+  
   if m, err := regexp.MatchString("^https?://", resource); err != nil {
     return err
   }else if m {
@@ -107,6 +112,7 @@ func (c EJSCompiler) emitImport(context Context, inpath, outpath string, output 
   }else{
     return c.emitImportFile(context, inpath, outpath, output, resource)
   }
+  
 }
 
 /**
@@ -135,10 +141,10 @@ func (c EJSCompiler) emitImportFile(context Context, inpath, outpath string, out
   base := path.Dir(inpath)
   if file, err := os.Open(path.Join(base, resource)); err != nil {
     return fmt.Errorf("Could not import file (via %s): %s", inpath, err)
-  }else if _, err := io.Copy(output, file); err != nil {
+  }else if compiler, err := NewCompiler(context, file.Name()); err != nil {
     return err
   }else{
-    return nil
+    return compiler.Compile(context, file.Name(), "", file, output);
   }
 }
 

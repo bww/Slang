@@ -54,7 +54,7 @@ func main() {
     var server *Server
     var err error
     
-    if server, err = NewServer(*fPort, *fPeer, fRoutes); err != nil {
+    if server, err = NewServer(context, *fPort, *fPeer, fRoutes); err != nil {
       fmt.Println(err)
       return
     }
