@@ -119,6 +119,7 @@ func (c EJSCompiler) emitImportURL(context Context, inpath, outpath string, outp
   }
   
   defer resp.Body.Close()
+  
   if _, err := io.Copy(output, resp.Body); err != nil {
     return err
   }
