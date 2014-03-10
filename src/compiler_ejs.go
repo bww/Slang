@@ -31,12 +31,18 @@
 package main
 
 import (
+  "os"
   "io"
   "fmt"
+	"path"
+  "regexp"
   "strconv"
   "io/ioutil"
-	//"unicode"
 	"unicode/utf8"
+)
+
+import (
+  "net/http"
 )
 
 /**
@@ -58,7 +64,6 @@ func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.R
   }
   
   scanner := NewScanner(string(source))
-  
   outer:
   for {
     
@@ -68,16 +73,73 @@ func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.R
     }
     
     for _, tok := range toks {
-      if tok.Type == tokenTypeEOF {
-        break outer
-      }else if tok.Type != tokenTypeVerbatim {
-        fmt.Println(tok.Text)
+      switch tok.Type {
+        
+        case tokenTypeEOF:
+          break outer
+          
+        case tokenTypeVerbatim:
+          if _, err := output.Write([]byte(tok.Text)); err != nil {
+            return err
+          }
+        
+        case tokenTypeImport:
+          if err := c.emitImport(context, inpath, outpath, output, tok.Text); err != nil {
+            return err
+          }
+        
       }
+      
     }
     
   }
   
   return nil
+}
+
+/**
+ * Emit an import
+ */
+func (c EJSCompiler) emitImport(context Context, inpath, outpath string, output io.Writer, resource string) error {
+  if m, err := regexp.MatchString("^https?://", resource); err != nil {
+    return err
+  }else if m {
+    return c.emitImportURL(context, inpath, outpath, output, resource)
+  }else{
+    return c.emitImportFile(context, inpath, outpath, output, resource)
+  }
+}
+
+/**
+ * Emit an import
+ */
+func (c EJSCompiler) emitImportURL(context Context, inpath, outpath string, output io.Writer, resource string) error {
+  
+  resp, err := http.Get(resource)
+  if err != nil {
+    return err
+  }
+  
+  defer resp.Body.Close()
+  if _, err := io.Copy(output, resp.Body); err != nil {
+    return err
+  }
+  
+  return nil
+}
+
+/**
+ * Emit an import
+ */
+func (c EJSCompiler) emitImportFile(context Context, inpath, outpath string, output io.Writer, resource string) error {
+  base := path.Dir(inpath)
+  if file, err := os.Open(path.Join(base, resource)); err != nil {
+    return err
+  }else if _, err := io.Copy(output, file); err != nil {
+    return err
+  }else{
+    return nil
+  }
 }
 
 /**
@@ -130,16 +192,19 @@ func (s *Scanner) Token() ([]Token, error) {
       
       case eof:
         if s.index - start > 0 {
-          return []Token{ Token{tokenTypeVerbatim, s.source[start:s.index-start]}, Token{tokenTypeEOF, "EOF"} }, nil
+          return []Token{ Token{tokenTypeVerbatim, s.source[start:s.index]}, Token{tokenTypeEOF, "EOF"} }, nil
         }else{
           return []Token{ Token{tokenTypeEOF, "EOF"} }, nil
         }
         
       case delimiter:
+        n := s.index - 1
         if t, err := s.directiveToken(); err != nil {
           return nil, err
+        }else if n - start > 0 {
+          return append([]Token{ Token{tokenTypeVerbatim, s.source[start:n]} }, t...), nil
         }else{
-          return append([]Token{ Token{tokenTypeVerbatim, s.source[start:s.index-start-1]} }, t...), nil
+          return t, nil
         }
       
     }
