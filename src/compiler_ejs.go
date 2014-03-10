@@ -33,6 +33,7 @@ package main
 import (
   "os"
   "io"
+  "fmt"
 	"path"
   "regexp"
   "io/ioutil"
@@ -133,7 +134,7 @@ func (c EJSCompiler) emitImportURL(context Context, inpath, outpath string, outp
 func (c EJSCompiler) emitImportFile(context Context, inpath, outpath string, output io.Writer, resource string) error {
   base := path.Dir(inpath)
   if file, err := os.Open(path.Join(base, resource)); err != nil {
-    return err
+    return fmt.Errorf("Could not import file (via %s): %s", inpath, err)
   }else if _, err := io.Copy(output, file); err != nil {
     return err
   }else{

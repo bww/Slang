@@ -191,7 +191,7 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
   if compiler, err := NewCompiler(context, file.Name()); err != nil {
     s.serveError(writer, request, 400, fmt.Errorf("Resource is not supported: %v", file))
     return
-  }else if err := compiler.Compile(context, "", "", file, writer); err != nil {
+  }else if err := compiler.Compile(context, file.Name(), "", file, writer); err != nil {
     s.serveError(writer, request, 500, fmt.Errorf("Could not compile resource: %v", err))
     return
   }
@@ -213,6 +213,7 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
       "Header": fmt.Sprintf("%d: %s", status, http.StatusText(status)),
       "Detail": problem,
     }
+    writer.Header().Add("Content-Type", "text/html")
     writer.WriteHeader(status)
     t.Execute(writer, params)
   }
