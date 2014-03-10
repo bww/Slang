@@ -109,16 +109,11 @@ func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
  * Proxy a request
  */
 func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request) {
-  
   if s.proxy == nil {
     s.serveError(writer, request, http.StatusBadGateway, fmt.Errorf("No proxy is configured for non-managed resource: %s", request.URL.Path))
-    return
-  }
-  
-  if err := s.proxy.ServeHTTP(writer, request); err != nil {
+  }else if err := s.proxy.ServeHTTP(writer, request); err != nil {
     s.serveError(writer, request, http.StatusBadGateway, err)
   }
-  
 }
 
 /**
