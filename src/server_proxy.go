@@ -42,7 +42,6 @@ package main
 
 import (
 	"io"
-	//"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -172,8 +171,6 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) erro
 	
 	res, err := transport.RoundTrip(outreq)
 	if err != nil {
-		//log.Printf("http: proxy error: %v", err)
-		//rw.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 	defer res.Body.Close()
