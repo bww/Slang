@@ -223,6 +223,7 @@ func (s *Scanner) Token() ([]Token, error) {
 func (s *Scanner) directiveToken() ([]Token, error) {
   var id string
   
+  s.skipWhite()
   if id = s.scanIdentifier(); len(id) < 1 {
     return nil, fmt.Errorf("Expected identifier after delimiter start '#'")
   }
@@ -240,6 +241,7 @@ func (s *Scanner) directiveToken() ([]Token, error) {
  * Produce an import directive token
  */
 func (s *Scanner) importToken() ([]Token, error) {
+  s.skipWhite()
   if resource, err := s.scanQuotedString(); err != nil {
     return nil, err
   }else{
@@ -279,7 +281,6 @@ func (s *Scanner) next() rune {
  */
 func (s *Scanner) scanIdentifier() string {
   var id string
-  s.skipWhite()
   
   for {
     r := s.next()
