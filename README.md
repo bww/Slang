@@ -55,7 +55,7 @@ Be aware that the EJS parser does not consider the Javascript context that macro
 	#import "another_file.js"
 	*/
 
-### `#import`
+### #import
 
 The `import` macro is used like this:
 
