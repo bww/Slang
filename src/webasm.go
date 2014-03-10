@@ -42,7 +42,7 @@ func main() {
   cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
   fServer := cmdline.Bool   ("server",  false,                    "Run the builtin server")
   fPort   := cmdline.Int    ("port",    9090,                     "The port to run the builtin server on")
-  fPeer   := cmdline.String ("proxy",   "http://localhost:8080/", "The address to proxy")
+  fPeer   := cmdline.String ("proxy",   "",                       "The address to reverse-proxy")
   
   fRoutes := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routes, formatted as '<remote>=<local>'")

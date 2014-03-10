@@ -109,9 +109,16 @@ func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
  * Proxy a request
  */
 func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request) {
+  
+  if s.proxy == nil {
+    s.serveError(writer, request, http.StatusBadGateway, fmt.Errorf("No proxy is configured for non-managed resource: %s", request.URL.Path))
+    return
+  }
+  
   if err := s.proxy.ServeHTTP(writer, request); err != nil {
     s.serveError(writer, request, http.StatusBadGateway, err)
   }
+  
 }
 
 /**
@@ -158,7 +165,7 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
   var err error
   
   if candidates, mimetype, err = s.routeRequest(request); err != nil {
-    s.serveError(writer, request, 404, fmt.Errorf("Could not map resource: %s", request.URL.Path))
+    s.serveError(writer, request, http.StatusNotFound, fmt.Errorf("Could not map resource: %s", request.URL.Path))
     return
   }
   
@@ -175,7 +182,7 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
   strict := false
   
   if strict {
-    s.serveError(writer, request, 404, fmt.Errorf("No such resource: %s", request.URL.Path))
+    s.serveError(writer, request, http.StatusNotFound, fmt.Errorf("No such resource: %s", request.URL.Path))
   }else{
     s.proxyRequest(writer, request)
   }
@@ -189,10 +196,10 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
   context := Context{}
   
   if compiler, err := NewCompiler(context, file.Name()); err != nil {
-    s.serveError(writer, request, 400, fmt.Errorf("Resource is not supported: %v", file))
+    s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Resource is not supported: %v", file))
     return
   }else if err := compiler.Compile(context, file.Name(), "", file, writer); err != nil {
-    s.serveError(writer, request, 500, fmt.Errorf("Could not compile resource: %v", err))
+    s.serveError(writer, request, http.StatusInternalServerError, fmt.Errorf("Could not compile resource: %v", err))
     return
   }
   
