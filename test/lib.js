@@ -1,5 +1,0 @@
-
-function doSomething() {
-  return "Something!"
-}
-
