@@ -185,6 +185,7 @@ func NewScanner(source string) *Scanner {
  */
 func (s *Scanner) Token() ([]Token, error) {
   start := s.index
+  p := rune(0)
   
   for {
     r := s.next()
@@ -198,16 +199,19 @@ func (s *Scanner) Token() ([]Token, error) {
         }
         
       case delimiter:
-        n := s.index - 1
-        if t, err := s.directiveToken(); err != nil {
-          return nil, err
-        }else if n - start > 0 {
-          return append([]Token{ Token{tokenTypeVerbatim, s.source[start:n]} }, t...), nil
-        }else{
-          return t, nil
+        if p == 0 || p == '\n' {
+          n := s.index - 1
+          if t, err := s.directiveToken(); err != nil {
+            return nil, err
+          }else if n - start > 0 {
+            return append([]Token{ Token{tokenTypeVerbatim, s.source[start:n]} }, t...), nil
+          }else{
+            return t, nil
+          }
         }
       
     }
+    p = r
   }
   
   return nil, fmt.Errorf("Unexpected end of input")
