@@ -52,6 +52,7 @@ var MIMETYPES = map[string]string {
   ".css":   "text/css",
   ".ejs":   "application/javascript",
   ".js":    "application/javascript",
+  ".html":  "text/html",
 }
 
 /**
@@ -94,7 +95,9 @@ func (s *Server) Run() {
  * Handle a request
  */
 func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
-  if strings.ToUpper(request.Method) == "GET" {
+  if s.proxy == nil {
+    s.serveRequest(writer, request)
+  }else if strings.ToUpper(request.Method) == "GET" {
     switch path.Ext(request.URL.Path) {
       case ".css", ".scss", ".ejs", ".js":
         s.serveRequest(writer, request)
@@ -144,7 +147,8 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
       candidates = append(candidates, relative)
   }
   
-  if mimetype = MIMETYPES[ext]; mimetype == "" {
+  var ok bool
+  if mimetype, ok = MIMETYPES[ext]; !ok {
     mimetype = "text/plain"
   }
   
@@ -167,11 +171,14 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
   
   for _, e := range candidates {
     fmt.Println(request.URL.Path, "->", e)
+    
     if file, err = os.Open(e); err == nil {
+      defer file.Close()
       writer.Header().Add("Content-Type", mimetype)
       s.compileAndServeFile(writer, request, file)
       return
     }
+    
   }
   
   // make this a flag or something...
@@ -190,8 +197,16 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
  */
 func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.Request, file *os.File) {
   
+  if fstat, err := file.Stat(); err != nil {
+    s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Could not stat file: %v", file.Name()))
+    return
+  }else if fstat.Mode().IsDir() {
+    s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Resource is not a file: %v", file.Name()))
+    return
+  }
+  
   if compiler, err := NewCompiler(s.context, file.Name()); err != nil {
-    s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Resource is not supported: %v", file))
+    s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Resource is not supported: %v", file.Name()))
     return
   }else if err := compiler.Compile(s.context, file.Name(), "", file, writer); err != nil {
     s.serveError(writer, request, http.StatusInternalServerError, fmt.Errorf("Could not compile resource: %v", err))
