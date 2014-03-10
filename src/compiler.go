@@ -34,6 +34,8 @@ import (
   "io"
   "fmt"
   "path"
+  "bytes"
+  "strings"
 )
 
 /**
@@ -51,18 +53,68 @@ type Compiler interface {
 }
 
 /**
+ * A compiler chain
+ */
+type CompilerChain []Compiler
+
+/**
+ * Compile for a chain
+ */
+func (c CompilerChain) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+  var w *bytes.Buffer
+  
+  for i, e := range c {
+    var r io.Reader
+    
+    if i == 0 {
+      r = input
+    }else{
+      r = w
+    }
+    
+    w = bytes.NewBuffer(make([]byte, 0))
+    
+    if err := e.Compile(context, inpath, outpath, r, w); err != nil {
+      return err
+    }
+    
+  }
+  
+  if _, err := w.WriteTo(output); err != nil {
+    return err
+  }
+  
+  return nil
+}
+
+/**
  * Create the default compiler for the specified file
  */
 func NewCompiler(context Context, inpath string) (Compiler, error) {
-  switch path.Ext(inpath) {
+  var ext string
+  
+  base := path.Base(inpath)
+  
+  if i := strings.Index(base, "."); i > 0 {
+    ext = base[i:]
+  }else{
+    return nil, fmt.Errorf("Input file has no extension: %s", base)
+  }
+  
+  switch ext {
     case ".scss":
       return &SassCompiler{}, nil
+    case ".min.ejs":
+      return CompilerChain([]Compiler{ &EJSCompiler{}, &JSMinCompiler{} }), nil
     case ".ejs":
       return &EJSCompiler{}, nil
+    case ".min.js":
+      return &JSMinCompiler{}, nil 
     case ".js":
-      return &JSMinCompiler{}, nil
+      return &LiteralCompiler{}, nil
     default:
       return nil, fmt.Errorf("Input file is not supported: %s", inpath)
   }
+  
 }
 
