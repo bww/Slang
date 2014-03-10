@@ -63,7 +63,7 @@ type Compiler interface {
 type CompilerChain []Compiler
 
 /**
- * Compile for a chain
+ * Compile for a chain (a chain is also itself a compiler)
  */
 func (c CompilerChain) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   var w *bytes.Buffer

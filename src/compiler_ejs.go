@@ -37,8 +37,9 @@ import (
 	"path"
   "regexp"
   "io/ioutil"
-  "ejs"
 )
+
+import "ejs"
 
 import (
   "net/http"

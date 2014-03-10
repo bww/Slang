@@ -206,18 +206,23 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
 func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, problem error) {
   log.Println(problem)
   if t, err := template.ParseFiles("resources/html/error.html"); err != nil {
+    
     fmt.Printf("Could not compile template: %v\n", err)
     writer.WriteHeader(status)
     writer.Write([]byte(problem.Error()))
+    
   }else{
+    
     params := map[string]interface{} {
       "Title": "Error",
       "Header": fmt.Sprintf("%d: %s", status, http.StatusText(status)),
       "Detail": problem,
     }
+    
     writer.Header().Add("Content-Type", "text/html")
     writer.WriteHeader(status)
     t.Execute(writer, params)
+    
   }
 }
 
