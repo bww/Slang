@@ -51,6 +51,9 @@ Web Assembler does not require you to maintain an explicit configuration file, i
 
 To determine what to do with a file, Web Assembler looks at the file's extension(s). The extensions `.js` and `.css` are considered to be *output formats*. These extensions are considered to be final and complete; they are not processed at all.
 
+* `file.css` → *no action* → `file.css`
+* `file.js` → *no action* → `file.js`
+
 ### Input Formats
 
 Extensions such as `.scss` and `.ejs` are compiled from their higher-level formats into their counterpart `.css` and `.js` output formats. For example:
