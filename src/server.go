@@ -124,8 +124,9 @@ func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request)
  */
 func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   var candidates []string
-  absolute := request.URL.Path
   var mimetype string
+  
+  absolute := request.URL.Path
   
   for k, v := range s.routes {
     if strings.HasPrefix(absolute, k) {
