@@ -27,6 +27,19 @@ In either case Web Assembler looks for resources relative to the directory you r
 
 In this example, the URL `http://localhost:9090/assets/css/style.css` would be mapped to the file at `./stylesheets/style.css`.
 
+Packaging Projects
+------------------
+
+The builtin Web Assembler server compiles assets in memory but [does not write them to disk][1]. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
+
+[1]: This behavior may be revisted.
+
+To package your project, simply point Web Assembler at the root under which your assets are located.
+
+	$ webasm ./assets
+
+Web Assembler will traverse the directory and compile any supported assets it encounters. For example, a file named `assets/site.ejs` will be compiled by Web Assembler and written to `assets/site.js`. Take care when naming your files, any file already existing at an output path will be overwritten.
+
 Extended Javascript
 -------------------
 
