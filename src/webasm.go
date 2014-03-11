@@ -37,16 +37,22 @@ import (
   "path/filepath"
 )
 
+var OPTIONS = &Options{}
+
 func main() {
   
-  cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  fServer := cmdline.Bool   ("server",  false,  "Run the builtin server")
-  fPort   := cmdline.Int    ("port",    9090,   "The port to run the builtin server on")
-  fPeer   := cmdline.String ("proxy",   "",     "The address to reverse-proxy")
-  
-  fRoutes := make(AssocParams)
+  cmdline   := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+  fServer   := cmdline.Bool   ("server",  false,  "Run the builtin server")
+  fPort     := cmdline.Int    ("port",    9090,   "The port to run the builtin server on")
+  fPeer     := cmdline.String ("proxy",   "",     "The address to reverse-proxy")
+  fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose")
+  fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose")
+  fRoutes   := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routes, formatted as '<remote>=<local>'")
   cmdline.Parse(os.Args[1:]);
+  
+  OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose)
+  OPTIONS.SetFlag(optionsFlagDebug, *fDebug)
   
   if(*fServer){
     runServer(*fPort, *fPeer, fRoutes)
