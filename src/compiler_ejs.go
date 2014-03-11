@@ -154,9 +154,9 @@ func (c EJSCompiler) emitImportURL(context *Context, inpath, outpath string, out
   resp, err := http.Get(resource)
   if err != nil {
     return err
+  }else{
+    defer resp.Body.Close()
   }
-  
-  defer resp.Body.Close()
   
   if _, err := io.Copy(output, resp.Body); err != nil {
     return err
