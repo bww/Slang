@@ -32,8 +32,6 @@ Packaging Projects
 
 The builtin Web Assembler server compiles assets in memory but [does not write them to disk][1]. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
 
-[1]: This behavior may be revisted.
-
 To package your project, simply point Web Assembler at the root under which your assets are located.
 
 	$ webasm ./assets
@@ -80,3 +78,5 @@ To import a file from a URL you can use the following. Web Assembler automatical
 
 	#import "http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"
 
+---
+[1]: This behavior may be revisted.
