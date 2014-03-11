@@ -102,7 +102,6 @@ func (c SassCompiler) Compile(context *Context, inpath, outpath string, input io
   options.image_path = C.SASS_EMTPY_STRING
   
   sass.options = options
-  
   C.sass_compile(sass)
   
   if sass.error_status != 0 {
