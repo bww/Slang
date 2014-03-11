@@ -117,13 +117,12 @@ func (c EJSCompiler) Compile(context *Context, inpath, outpath string, input io.
 func (c EJSCompiler) emitImport(context *Context, inpath, outpath string, output io.Writer, resource string) error {
   var absolute string
   
-  base := path.Dir(inpath)
   isurl, err := regexp.MatchString("^https?://", resource)
   if err != nil {
     return err
   }else if isurl {
     absolute = resource
-  }else if abs, err := filepath.Abs(path.Join(base, resource)); err != nil {
+  }else if abs, err := filepath.Abs(path.Join(path.Dir(inpath), resource)); err != nil {
     return err
   }else{
     absolute = abs
