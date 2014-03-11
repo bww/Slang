@@ -137,12 +137,13 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   
   ext := path.Ext(absolute)
   relative := absolute[1:]
+  base := relative[:len(relative) - len(ext)]
   
   switch ext {
     case ".css":
-      candidates = append(candidates, relative[:len(relative) - len(ext)] +".scss", relative)
+      candidates = append(candidates, base +".min.scss", base +".scss", relative)
     case ".js":
-      candidates = append(candidates, relative[:len(relative) - len(ext)] +".ejs", relative)
+      candidates = append(candidates, base +".min.ejs", base +".ejs", relative)
     default:
       candidates = append(candidates, relative)
   }

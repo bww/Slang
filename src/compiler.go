@@ -60,7 +60,7 @@ type Compiler interface {
  * Determine if a resource can be compiled
  */
 func CanCompile(context Context, inpath string) bool {
-  switch everyExtension(inpath) {
+  switch fullExtension(inpath) {
     case ".scss", ".min.js", ".ejs", ".min.ejs":
       return true
     default:
@@ -72,7 +72,7 @@ func CanCompile(context Context, inpath string) bool {
  * Create the default compiler for the specified file
  */
 func NewCompiler(context Context, inpath string) (Compiler, error) {
-  switch everyExtension(inpath) {
+  switch fullExtension(inpath) {
     case ".scss":
       return &SassCompiler{}, nil
     case ".min.ejs":
@@ -89,7 +89,7 @@ func NewCompiler(context Context, inpath string) (Compiler, error) {
 /**
  * Obtain every extension for a path
  */
-func everyExtension(p string) string {
+func fullExtension(p string) string {
   base := path.Base(p)
   if i := strings.Index(base, "."); i > 0 {
     return base[i:]
