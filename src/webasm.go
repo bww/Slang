@@ -127,7 +127,7 @@ func compileResource(context Context, input *os.File, info os.FileInfo) error {
     return err
   }else if outpath, err := compiler.OutputPath(context, inpath); err != nil {
     return err
-  }else if output, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE, 0644); err != nil {
+  }else if output, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0644); err != nil {
     return err
   }else if err := compiler.Compile(context, inpath, outpath, input, output); err != nil {
     return err

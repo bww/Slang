@@ -6,9 +6,11 @@ The latest and best incarnation of Web Assembler.
 About
 -----
 
-*Web Assembler* includes a bundled server that compiles and serves assets as they are requested. You can test your site directly from this server or you can run Web Assembler in tandem with whatever app server you use.
+*Web Assembler* includes a specialized built-in server that compiles and serves assets as they are requested. You can test your site directly from this server or you can run Web Assembler in tandem with whatever app server you use.
 
-When you make requests to the Web Assembler server it determines whether request is for a resource that Web Assembler manages (such as SCSS, CSS, JS files) and, if so, it compiles and responds with that resource. Requests for resources that Web Assembler does not manage directly (such as HTML) are reverse-proxied to your app server.
+When you make requests to the Web Assembler server it determines whether that request is for a resource that Web Assembler manages (such as SCSS, EJS, JS files) and, if so, it compiles and responds with that resource.
+
+Requests for resources that Web Assembler does not manage directly (such as HTML) are either reverse-proxied to your app server (if so configured) or copied from disk without modification.
 
 Running Webasm
 --------------
@@ -30,13 +32,53 @@ In this example, the URL `http://localhost:9090/assets/css/style.css` would be m
 Packaging Projects
 ------------------
 
-The builtin Web Assembler server compiles assets in memory but [does not write them to disk][1]. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
+The built-in Web Assembler server compiles assets in memory but does not write them to disk. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
 
 To package your project, simply point Web Assembler at the root under which your assets are located.
 
 	$ webasm ./assets
 
 Web Assembler will traverse the directory and compile any supported assets it encounters. For example, a file named `assets/site.ejs` will be compiled by Web Assembler and written to `assets/site.js`. Take care when naming your files, any file already existing at an output path will be overwritten.
+
+What Gets Processed
+-------------------
+
+Web Assembler will process all the file types it understands for you. Currently that includes SASS, EJS, and Javascript files.
+
+Web Assembler does not require you to maintain an explicit configuration file, it knows what to do based on some well-established conventions. As a result, *you must take care to follow these conventions* when naming your files or Web Assembler will not work as expected.
+
+### Output Formats
+
+To determine what to do with a file, Web Assembler looks at the file's extension(s). The extensions `.js` and `.css` are considered to be *output formats*. These extensions are considered to be final and complete; they are not processed at all.
+
+### Input Formats
+
+Extensions such as `.scss` and `.ejs` are compiled from their higher-level formats into their counterpart `.css` and `.js` output formats. For example:
+
+* `file.scss` → *scss compiler* → `file.css`
+* `file.ejs` → *ejs compiler* → `file.js`
+
+The secondary extension `.min` is handled somewhat differently from the conventions you may be used to. The `.min` extension indicates that an input file *should be* minimized when it is processed, it **does not** mean that the contents of the file *already is* minimized.
+
+* `file.min.scss` → *scss compiler*  → *minimizer* → `file.css`
+* `file.min.css` → *minimizer* → `file.css`
+* `file.min.ejs` → *ejs compiler*  → *minimizer* → `file.js`
+* `file.min.js` → *minimizer* → `file.js`
+
+This somewhat unusual handling may cause problems when you are using already-minimized Javascript library files. To work around this quirk, use the unminimized development version of libraries in your project and let Web Assembler minimize them for you.
+
+### Reverse Mapping
+
+When running in server mode during development these conventions are reversed. In your HTML you should reference the *output format* version of your assets. Web Assembler maps these back to their counterpart input format in your project. For example, when referencing the following stylesheet:
+
+	<link rel="stylesheet" href="css/style.css" />
+
+The Web Assembler server will check for the following resources, in order. The first resource it encounteres will be compiled as appropriate and responded with:
+
+1. `css/style.min.scss`
+2. `css/style.scss`
+3. `css/style.min.css`
+4. `css/style.css`
 
 Extended Javascript
 -------------------
@@ -78,5 +120,3 @@ To import a file from a URL you can use the following. Web Assembler automatical
 
 	#import "http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"
 
----
-[1]: This behavior may be revisted.

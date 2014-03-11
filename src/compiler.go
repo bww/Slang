@@ -61,7 +61,7 @@ type Compiler interface {
  */
 func CanCompile(context Context, inpath string) bool {
   switch fullExtension(inpath) {
-    case ".scss", ".min.js", ".ejs", ".min.ejs":
+    case ".min.scss", ".scss", ".min.js", ".ejs", ".min.ejs":
       return true
     default:
       return false
@@ -73,6 +73,8 @@ func CanCompile(context Context, inpath string) bool {
  */
 func NewCompiler(context Context, inpath string) (Compiler, error) {
   switch fullExtension(inpath) {
+    case ".min.scss", ".min.css":
+      return &SassCompiler{sassOptionCompress}, nil
     case ".scss":
       return &SassCompiler{}, nil
     case ".min.ejs":
