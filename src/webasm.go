@@ -32,7 +32,6 @@ package main
 
 import (
   "os"
-  "io"
   "fmt"
   "flag"
   "path/filepath"
@@ -81,7 +80,8 @@ func runServer(context Context, port int, peer string, routes map[string]string)
  */
 func runCompile(context Context, cmdline *flag.FlagSet) {
   for _, f := range cmdline.Args() {
-    var input io.Reader
+    var input *os.File
+    var fstat os.FileInfo
     var err error
     
     if input, err = os.Open(f); err != nil {
@@ -91,16 +91,16 @@ func runCompile(context Context, cmdline *flag.FlagSet) {
     
     defer input.Close()
     
-    if fstat, err := input.Stat(); err != nil {
+    if fstat, err = input.Stat(); err != nil {
       fmt.Println(err)
       return
     }
     
     if fstat.Mode().IsDir() {
       d := DirectoryContext{context}
-      filepath.Walk(input.Name(), d.compileDirectoryResource)
+      filepath.Walk(input.Name(), d.compileResource)
     }else{
-      compileResource(context, input)
+      compileResource(context, input, fstat)
     }
     
   }
@@ -119,15 +119,18 @@ type DirectoryContext struct {
 func (c DirectoryContext) compileResource(path string, info os.FileInfo, err error) error {
   if err != nil {
     return err
+  }else if input, err := os.Open(path); err != nil {
+    return err
   }else{
-    return nil//compileResource(c.context, 
+    defer input.Close()
+    return compileResource(c.context, input, info)
   }
 }
 
 /**
  * Compile a resource
  */
-func compileResource(context Context, input *os.File) error {
+func compileResource(context Context, input *os.File, info os.FileInfo) error {
   if compiler, err := NewCompiler(context, input.Name()); err != nil {
     return err
   }else if err := compiler.Compile(context, input.Name(), input.Name() +".out", input, os.Stdout); err != nil {
