@@ -45,14 +45,14 @@ type LiteralCompiler struct {
 /**
  * Output path
  */
-func (c LiteralCompiler) OutputPath(context Context, inpath string) (string, error) {
+func (c LiteralCompiler) OutputPath(context *Context, inpath string) (string, error) {
   return fmt.Sprintf("%s.webasm", inpath), nil
 }
 
 /**
  * Compile passthrough
  */
-func (c LiteralCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+func (c LiteralCompiler) Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   if _, err := io.Copy(output, input); err != nil {
     return err
   }else{

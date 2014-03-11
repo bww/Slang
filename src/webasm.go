@@ -48,12 +48,10 @@ func main() {
   cmdline.Var(&fRoutes, "route", "Routes, formatted as '<remote>=<local>'")
   cmdline.Parse(os.Args[1:]);
   
-  context := Context{}
-  
   if(*fServer){
-    runServer(context, *fPort, *fPeer, fRoutes)
+    runServer(*fPort, *fPeer, fRoutes)
   }else{
-    runCompile(context, cmdline)
+    runCompile(cmdline)
   }
   
 }
@@ -61,11 +59,11 @@ func main() {
 /**
  * Service
  */
-func runServer(context Context, port int, peer string, routes map[string]string) {
+func runServer(port int, peer string, routes map[string]string) {
   var server *Server
   var err error
   
-  if server, err = NewServer(context, port, peer, routes); err != nil {
+  if server, err = NewServer(port, peer, routes); err != nil {
     fmt.Println(err)
     return
   }
@@ -78,7 +76,7 @@ func runServer(context Context, port int, peer string, routes map[string]string)
 /**
  * Compile
  */
-func runCompile(context Context, cmdline *flag.FlagSet) {
+func runCompile(cmdline *flag.FlagSet) {
   for _, f := range cmdline.Args() {
     var input *os.File
     var fstat os.FileInfo
@@ -97,13 +95,14 @@ func runCompile(context Context, cmdline *flag.FlagSet) {
     }
     
     if fstat.Mode().IsDir() {
-      w := Walker{context}
+      w := &Walker{}
       if err := filepath.Walk(input.Name(), w.compileResource); err != nil {
         fmt.Println(err)
         return
       }
     }else{
-      if err := compileResource(context, input, fstat); err != nil {
+      c := NewContext()
+      if err := compileResource(c, input, fstat); err != nil {
         fmt.Println(err)
         return
       }
@@ -115,7 +114,7 @@ func runCompile(context Context, cmdline *flag.FlagSet) {
 /**
  * Compile a resource
  */
-func compileResource(context Context, input *os.File, info os.FileInfo) error {
+func compileResource(context *Context, input *os.File, info os.FileInfo) error {
   inpath := input.Name()
   
   if !CanCompile(context, inpath) {
@@ -141,7 +140,7 @@ func compileResource(context Context, input *os.File, info os.FileInfo) error {
  * Walk context
  */
 type Walker struct {
-  context Context
+  // ...
 }
 
 /**
@@ -156,7 +155,7 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
     return err
   }else{
     defer input.Close()
-    return compileResource(w.context, input, info)
+    return compileResource(NewContext(), input, info)
   }
 }
 

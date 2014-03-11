@@ -43,7 +43,7 @@ type CompilerChain []Compiler
 /**
  * Obtain the output path for an input path
  */
-func (c CompilerChain) OutputPath(context Context, inpath string) (string, error) {
+func (c CompilerChain) OutputPath(context *Context, inpath string) (string, error) {
   var outpath string = inpath
   var err error
   
@@ -59,7 +59,7 @@ func (c CompilerChain) OutputPath(context Context, inpath string) (string, error
 /**
  * Compile for a chain (a chain is also itself a compiler)
  */
-func (c CompilerChain) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+func (c CompilerChain) Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   var w *bytes.Buffer
   
   for i, e := range c {

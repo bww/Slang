@@ -61,7 +61,7 @@ type SassCompiler struct {
 /**
  * Output path
  */
-func (c SassCompiler) OutputPath(context Context, inpath string) (string, error) {
+func (c SassCompiler) OutputPath(context *Context, inpath string) (string, error) {
   ext := fullExtension(inpath)
   switch ext {
     case ".min.scss", ".scss":
@@ -74,7 +74,7 @@ func (c SassCompiler) OutputPath(context Context, inpath string) (string, error)
 /**
  * Compile SASS
  */
-func (c SassCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+func (c SassCompiler) Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   var sass *C.struct_sass_context
   var options C.struct_sass_options
   

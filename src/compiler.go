@@ -46,20 +46,55 @@ const (
  */
 type Context struct {
   Options   int
+  Visited   map[string]bool
+}
+
+/**
+ * Create a compiler context
+ */
+func NewContext() *Context {
+  return &Context{0, make(map[string]bool)}
+}
+
+/**
+ * Add a visited resource
+ */
+func (c *Context) AddVisited(resource string) {
+  c.Visited[resource] = true
+}
+
+/**
+ * Is a resource visited
+ */
+func (c *Context) IsVisited(resource string) bool {
+  if _, ok := c.Visited[resource]; ok {
+    return true
+  }else{
+    return false
+  }
+}
+
+/**
+ * Clear the visited resource map
+ */
+func (c *Context) ClearVisited() {
+  for k := range c.Visited {
+    delete(c.Visited, k)
+  }
 }
 
 /**
  * A compiler
  */
 type Compiler interface {
-  OutputPath(context Context, inpath string) (string, error)
-  Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error
+  OutputPath(context *Context, inpath string) (string, error)
+  Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error
 }
 
 /**
  * Determine if a resource can be compiled
  */
-func CanCompile(context Context, inpath string) bool {
+func CanCompile(context *Context, inpath string) bool {
   switch fullExtension(inpath) {
     case ".min.scss", ".scss", ".min.js", ".ejs", ".min.ejs":
       return true
@@ -71,7 +106,7 @@ func CanCompile(context Context, inpath string) bool {
 /**
  * Create the default compiler for the specified file
  */
-func NewCompiler(context Context, inpath string) (Compiler, error) {
+func NewCompiler(context *Context, inpath string) (Compiler, error) {
   switch fullExtension(inpath) {
     case ".min.scss", ".min.css":
       return &SassCompiler{sassOptionCompress}, nil
