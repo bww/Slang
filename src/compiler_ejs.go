@@ -169,6 +169,7 @@ func (c EJSCompiler) emitImportURL(context *Context, inpath, outpath string, out
  * Emit an import
  */
 func (c EJSCompiler) emitImportFile(context *Context, inpath, outpath string, output io.Writer, resource string) error {
+  
   if file, err := os.Open(resource); err != nil {
     return fmt.Errorf("Could not import file (via %s): %s", inpath, err)
   }else if compiler, err := NewCompiler(context, file.Name()); err != nil {
@@ -176,5 +177,6 @@ func (c EJSCompiler) emitImportFile(context *Context, inpath, outpath string, ou
   }else{
     return compiler.Compile(context, file.Name(), "", file, output);
   }
+  
 }
 
