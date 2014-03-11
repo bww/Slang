@@ -130,7 +130,6 @@ func (c EJSCompiler) emitImport(context *Context, inpath, outpath string, output
   }
   
   if context.IsVisited(absolute) {
-    fmt.Println("SKIPPING ALREADY-VISITED RESOURCE:", absolute)
     return nil
   }else{
     context.AddVisited(absolute)
