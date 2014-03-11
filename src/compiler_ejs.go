@@ -115,7 +115,7 @@ func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.R
  */
 func (c EJSCompiler) emitImport(context Context, inpath, outpath string, output io.Writer, resource string) error {
   
-  if _, err := output.Write([]byte(fmt.Sprintf("/* #import \"%s\" */\n", inpath))); err != nil {
+  if _, err := output.Write([]byte(fmt.Sprintf("/* #import %+q */\n", resource))); err != nil {
     return err
   }
   
