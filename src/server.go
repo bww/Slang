@@ -124,7 +124,7 @@ func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request)
  * Route a request
  */
 func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
-  candidates := make([]string, 0)
+  var candidates []string
   absolute := request.URL.Path
   var mimetype string
   
@@ -141,11 +141,11 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   
   switch ext {
     case ".css":
-      candidates = append(candidates, base +".min.scss", base +".scss", relative)
+      candidates = []string{ base +".min.scss", base +".scss", base +".min.css", relative }
     case ".js":
-      candidates = append(candidates, base +".min.ejs", base +".ejs", relative)
+      candidates = []string{ base +".min.ejs", base +".ejs", base +".min.js", relative }
     default:
-      candidates = append(candidates, relative)
+      candidates = []string{ relative }
   }
   
   var ok bool
