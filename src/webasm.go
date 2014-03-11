@@ -118,8 +118,10 @@ func compileResource(context *Context, input *os.File, info os.FileInfo) error {
   inpath := input.Name()
   
   if !CanCompile(context, inpath) {
-    fmt.Printf("Skipping %s\n", inpath)
+    fmt.Printf("[ ] %s\n", inpath)
     return nil
+  }else{
+    fmt.Printf("[+] %s\n", inpath)
   }
   
   if compiler, err := NewCompiler(context, inpath); err != nil {

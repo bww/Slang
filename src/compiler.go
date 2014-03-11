@@ -46,7 +46,7 @@ const (
  */
 type Context struct {
   Options   int
-  Visited   map[string]bool
+  visited   map[string]bool
 }
 
 /**
@@ -60,14 +60,14 @@ func NewContext() *Context {
  * Add a visited resource
  */
 func (c *Context) AddVisited(resource string) {
-  c.Visited[resource] = true
+  c.visited[resource] = true
 }
 
 /**
  * Is a resource visited
  */
 func (c *Context) IsVisited(resource string) bool {
-  if _, ok := c.Visited[resource]; ok {
+  if _, ok := c.visited[resource]; ok {
     return true
   }else{
     return false
@@ -78,8 +78,8 @@ func (c *Context) IsVisited(resource string) bool {
  * Clear the visited resource map
  */
 func (c *Context) ClearVisited() {
-  for k := range c.Visited {
-    delete(c.Visited, k)
+  for k := range c.visited {
+    delete(c.visited, k)
   }
 }
 
