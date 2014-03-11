@@ -32,31 +32,57 @@ package main
 
 import (
   "io"
-  "fmt"
+  "bytes"
 )
 
 /**
- * A "literal" (passthrough) compiler
+ * A compiler chain
  */
-type LiteralCompiler struct {
-  // ...
-}
+type CompilerChain []Compiler
 
 /**
- * Output path
+ * Obtain the output path for an input path
  */
-func (c LiteralCompiler) OutputPath(context Context, inpath string) (string, error) {
-  return fmt.Sprintf("%s.webasm", inpath), nil
-}
-
-/**
- * Compile passthrough
- */
-func (c LiteralCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
-  if _, err := io.Copy(output, input); err != nil {
-    return err
-  }else{
-    return nil
+func (c CompilerChain) OutputPath(context Context, inpath string) (string, error) {
+  var outpath string = inpath
+  var err error
+  
+  for _, e := range c {
+    if outpath, err = e.OutputPath(context, outpath); err != nil {
+      return "", err
+    }
   }
+  
+  return outpath, nil
+}
+
+/**
+ * Compile for a chain (a chain is also itself a compiler)
+ */
+func (c CompilerChain) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+  var w *bytes.Buffer
+  
+  for i, e := range c {
+    var r io.Reader
+    
+    if i == 0 {
+      r = input
+    }else{
+      r = w
+    }
+    
+    w = bytes.NewBuffer(make([]byte, 0))
+    
+    if err := e.Compile(context, inpath, outpath, r, w); err != nil {
+      return err
+    }
+    
+  }
+  
+  if _, err := w.WriteTo(output); err != nil {
+    return err
+  }
+  
+  return nil
 }
 

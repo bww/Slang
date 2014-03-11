@@ -33,6 +33,7 @@ package main
 import (
   "io"
   "fmt"
+  "path"
   "unsafe"
   "io/ioutil"
 )
@@ -49,6 +50,19 @@ import "C"
  */
 type JSMinCompiler struct {
   // ...
+}
+
+/**
+ * Output path
+ */
+func (c JSMinCompiler) OutputPath(context Context, inpath string) (string, error) {
+  ext := path.Ext(inpath)
+  switch ext {
+    case ".js":
+      return inpath[:len(inpath)-len(ext)] +".min.js", nil
+    default:
+      return "", fmt.Errorf("Invalid input file extension: %s", ext)
+  }
 }
 
 /**

@@ -53,6 +53,19 @@ type EJSCompiler struct {
 }
 
 /**
+ * Output path
+ */
+func (c EJSCompiler) OutputPath(context Context, inpath string) (string, error) {
+  ext := path.Ext(inpath)
+  switch ext {
+    case ".ejs":
+      return inpath[:len(inpath)-len(ext)] +".js", nil
+    default:
+      return "", fmt.Errorf("Invalid input file extension: %s", ext)
+  }
+}
+
+/**
  * Compile EJS
  */
 func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {

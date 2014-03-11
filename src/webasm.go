@@ -97,33 +97,18 @@ func runCompile(context Context, cmdline *flag.FlagSet) {
     }
     
     if fstat.Mode().IsDir() {
-      d := DirectoryContext{context}
-      filepath.Walk(input.Name(), d.compileResource)
+      w := Walker{context}
+      if err := filepath.Walk(input.Name(), w.compileResource); err != nil {
+        fmt.Println(err)
+        return
+      }
     }else{
-      compileResource(context, input, fstat)
+      if err := compileResource(context, input, fstat); err != nil {
+        fmt.Println(err)
+        return
+      }
     }
     
-  }
-}
-
-/**
- * Walk context
- */
-type DirectoryContext struct {
-  context Context
-}
-
-/**
- * Compile a resource
- */
-func (c DirectoryContext) compileResource(path string, info os.FileInfo, err error) error {
-  if err != nil {
-    return err
-  }else if input, err := os.Open(path); err != nil {
-    return err
-  }else{
-    defer input.Close()
-    return compileResource(c.context, input, info)
   }
 }
 
@@ -131,12 +116,48 @@ func (c DirectoryContext) compileResource(path string, info os.FileInfo, err err
  * Compile a resource
  */
 func compileResource(context Context, input *os.File, info os.FileInfo) error {
-  if compiler, err := NewCompiler(context, input.Name()); err != nil {
+  inpath := input.Name()
+  
+  if !CanCompile(context, inpath) {
+    fmt.Printf("Skipping %s\n", inpath)
+    return nil
+  }
+  
+  if compiler, err := NewCompiler(context, inpath); err != nil {
     return err
-  }else if err := compiler.Compile(context, input.Name(), input.Name() +".out", input, os.Stdout); err != nil {
+  }else if outpath, err := compiler.OutputPath(context, inpath); err != nil {
+    return err
+  }else if output, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE, 0644); err != nil {
+    return err
+  }else if err := compiler.Compile(context, inpath, outpath, input, output); err != nil {
     return err
   }else{
     return nil
   }
+  
 }
+
+/**
+ * Walk context
+ */
+type Walker struct {
+  context Context
+}
+
+/**
+ * Compile a resource
+ */
+func (w Walker) compileResource(path string, info os.FileInfo, err error) error {
+  if err != nil {
+    return err
+  }else if info.Mode().IsDir() {
+    return nil // just descend
+  }else if input, err := os.Open(path); err != nil {
+    return err
+  }else{
+    defer input.Close()
+    return compileResource(w.context, input, info)
+  }
+}
+
 

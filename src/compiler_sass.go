@@ -33,6 +33,7 @@ package main
 import (
   "io"
   "fmt"
+  "path"
   "unsafe"
   "io/ioutil"
 )
@@ -51,6 +52,19 @@ import "C"
  */
 type SassCompiler struct {
   // ...
+}
+
+/**
+ * Output path
+ */
+func (c SassCompiler) OutputPath(context Context, inpath string) (string, error) {
+  ext := path.Ext(inpath)
+  switch ext {
+    case ".scss":
+      return inpath[:len(inpath)-len(ext)] +".css", nil
+    default:
+      return "", fmt.Errorf("Invalid input file extension: %s", ext)
+  }
 }
 
 /**
