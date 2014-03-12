@@ -46,17 +46,35 @@ const char *SASS_EMTPY_STRING = "";
 */
 import "C"
 
+const (
+  sassOptionNone        = 0
+  sassOptionCompress    = 1 << 0
+)
+
 /**
  * A SASS compiler
  */
 type SassCompiler struct {
-  // ...
+  options   int
+}
+
+/**
+ * Output path
+ */
+func (c SassCompiler) OutputPath(context *Context, inpath string) (string, error) {
+  ext := fullExtension(inpath)
+  switch ext {
+    case ".min.scss", ".scss":
+      return inpath[:len(inpath)-len(ext)] +".css", nil
+    default:
+      return "", fmt.Errorf("Invalid input file extension: %s", ext)
+  }
 }
 
 /**
  * Compile SASS
  */
-func (c SassCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+func (c SassCompiler) Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   var sass *C.struct_sass_context
   var options C.struct_sass_options
   
@@ -74,10 +92,16 @@ func (c SassCompiler) Compile(context Context, inpath, outpath string, input io.
     defer C.free(unsafe.Pointer(sass.source_string))
   }
   
+  if (c.options & sassOptionCompress) == sassOptionCompress {
+    options.output_style = C.SASS_STYLE_COMPRESSED
+  }else{
+    options.output_style = C.SASS_STYLE_EXPANDED
+  }
+  
   options.include_paths = C.SASS_EMTPY_STRING
   options.image_path = C.SASS_EMTPY_STRING
-  sass.options = options
   
+  sass.options = options
   C.sass_compile(sass)
   
   if sass.error_status != 0 {

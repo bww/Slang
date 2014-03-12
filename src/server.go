@@ -59,7 +59,6 @@ var MIMETYPES = map[string]string {
  * A server
  */
 type Server struct {
-  context Context
   port    int
   peer    string
   routes  map[string]string
@@ -69,7 +68,7 @@ type Server struct {
 /**
  * Create a server
  */
-func NewServer(context Context, port int, peer string, routes map[string]string) (*Server, error) {
+func NewServer(port int, peer string, routes map[string]string) (*Server, error) {
   var proxy *ReverseProxy = nil
   
   if peer != "" {
@@ -80,7 +79,7 @@ func NewServer(context Context, port int, peer string, routes map[string]string)
     }
   }
   
-  return &Server{context, port, peer, routes, proxy}, nil
+  return &Server{port, peer, routes, proxy}, nil
 }
 
 /**
@@ -124,9 +123,10 @@ func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request)
  * Route a request
  */
 func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
-  candidates := make([]string, 0)
-  absolute := request.URL.Path
+  var candidates []string
   var mimetype string
+  
+  absolute := request.URL.Path
   
   for k, v := range s.routes {
     if strings.HasPrefix(absolute, k) {
@@ -137,14 +137,15 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   
   ext := path.Ext(absolute)
   relative := absolute[1:]
+  base := relative[:len(relative) - len(ext)]
   
   switch ext {
     case ".css":
-      candidates = append(candidates, relative[:len(relative) - len(ext)] +".scss", relative)
+      candidates = []string{ base +".min.scss", base +".scss", base +".min.css", relative }
     case ".js":
-      candidates = append(candidates, relative[:len(relative) - len(ext)] +".ejs", relative)
+      candidates = []string{ base +".min.ejs", base +".ejs", base +".min.js", relative }
     default:
-      candidates = append(candidates, relative)
+      candidates = []string{ relative }
   }
   
   var ok bool
@@ -196,6 +197,7 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
  * Serve a request
  */
 func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.Request, file *os.File) {
+  context := NewContext()
   
   if fstat, err := file.Stat(); err != nil {
     s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Could not stat file: %v", file.Name()))
@@ -205,10 +207,10 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
     return
   }
   
-  if compiler, err := NewCompiler(s.context, file.Name()); err != nil {
+  if compiler, err := NewCompiler(context, file.Name()); err != nil {
     s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Resource is not supported: %v", file.Name()))
     return
-  }else if err := compiler.Compile(s.context, file.Name(), "", file, writer); err != nil {
+  }else if err := compiler.Compile(context, file.Name(), "", file, writer); err != nil {
     s.serveError(writer, request, http.StatusInternalServerError, fmt.Errorf("Could not compile resource: %v", err))
     return
   }

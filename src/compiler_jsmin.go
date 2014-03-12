@@ -52,9 +52,22 @@ type JSMinCompiler struct {
 }
 
 /**
+ * Output path
+ */
+func (c JSMinCompiler) OutputPath(context *Context, inpath string) (string, error) {
+  ext := fullExtension(inpath)
+  switch ext {
+    case ".min.js":
+      return inpath[:len(inpath)-len(ext)] +".js", nil
+    default:
+      return "", fmt.Errorf("Invalid input file extension: %s", ext)
+  }
+}
+
+/**
  * Compile JSMin
  */
-func (c JSMinCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+func (c JSMinCompiler) Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   var minified *C.char
   var source *C.char
   

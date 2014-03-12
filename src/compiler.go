@@ -32,9 +32,7 @@ package main
 
 import (
   "io"
-  "fmt"
   "path"
-  "bytes"
   "strings"
 )
 
@@ -48,65 +46,70 @@ const (
  */
 type Context struct {
   Options   int
+  visited   map[string]bool
+}
+
+/**
+ * Create a compiler context
+ */
+func NewContext() *Context {
+  return &Context{0, make(map[string]bool)}
+}
+
+/**
+ * Add a visited resource
+ */
+func (c *Context) AddVisited(resource string) {
+  c.visited[resource] = true
+}
+
+/**
+ * Is a resource visited
+ */
+func (c *Context) IsVisited(resource string) bool {
+  if _, ok := c.visited[resource]; ok {
+    return true
+  }else{
+    return false
+  }
+}
+
+/**
+ * Clear the visited resource map
+ */
+func (c *Context) ClearVisited() {
+  for k := range c.visited {
+    delete(c.visited, k)
+  }
 }
 
 /**
  * A compiler
  */
 type Compiler interface {
-  Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error
+  OutputPath(context *Context, inpath string) (string, error)
+  Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error
 }
 
 /**
- * A compiler chain
+ * Determine if a resource can be compiled
  */
-type CompilerChain []Compiler
-
-/**
- * Compile for a chain (a chain is also itself a compiler)
- */
-func (c CompilerChain) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
-  var w *bytes.Buffer
-  
-  for i, e := range c {
-    var r io.Reader
-    
-    if i == 0 {
-      r = input
-    }else{
-      r = w
-    }
-    
-    w = bytes.NewBuffer(make([]byte, 0))
-    
-    if err := e.Compile(context, inpath, outpath, r, w); err != nil {
-      return err
-    }
-    
+func CanCompile(context *Context, inpath string) bool {
+  switch fullExtension(inpath) {
+    case ".min.scss", ".scss", ".min.js", ".ejs", ".min.ejs":
+      return true
+    default:
+      return false
   }
-  
-  if _, err := w.WriteTo(output); err != nil {
-    return err
-  }
-  
-  return nil
 }
 
 /**
  * Create the default compiler for the specified file
  */
-func NewCompiler(context Context, inpath string) (Compiler, error) {
-  var ext string
-  
-  base := path.Base(inpath)
-  
-  if i := strings.Index(base, "."); i > 0 {
-    ext = base[i:]
-  }else{
-    return nil, fmt.Errorf("Input file has no extension: %s", base)
-  }
-  
-  switch ext {
+func NewCompiler(context *Context, inpath string) (Compiler, error) {
+  switch fullExtension(inpath) {
+    case ".min.scss", ".min.css":
+      return &SassCompiler{sassOptionCompress}, nil
     case ".scss":
       return &SassCompiler{}, nil
     case ".min.ejs":
@@ -115,11 +118,20 @@ func NewCompiler(context Context, inpath string) (Compiler, error) {
       return &EJSCompiler{}, nil
     case ".min.js":
       return &JSMinCompiler{}, nil 
-    case ".js":
-      return &LiteralCompiler{}, nil
     default:
       return &LiteralCompiler{}, nil
   }
-  
+}
+
+/**
+ * Obtain every extension for a path
+ */
+func fullExtension(p string) string {
+  base := path.Base(p)
+  if i := strings.Index(base, "."); i > 0 {
+    return base[i:]
+  }else{
+    return ""
+  }
 }
 

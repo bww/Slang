@@ -37,6 +37,7 @@ import (
 	"path"
   "regexp"
   "io/ioutil"
+  "path/filepath"
 )
 
 import "ejs"
@@ -53,9 +54,22 @@ type EJSCompiler struct {
 }
 
 /**
+ * Output path
+ */
+func (c EJSCompiler) OutputPath(context *Context, inpath string) (string, error) {
+  ext := path.Ext(inpath)
+  switch ext {
+    case ".ejs":
+      return inpath[:len(inpath)-len(ext)] +".js", nil
+    default:
+      return "", fmt.Errorf("Invalid input file extension: %s", ext)
+  }
+}
+
+/**
  * Compile EJS
  */
-func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.Reader, output io.Writer) error {
+func (c EJSCompiler) Compile(context *Context, inpath, outpath string, input io.Reader, output io.Writer) error {
   var source []byte
   var err error
   
@@ -100,18 +114,34 @@ func (c EJSCompiler) Compile(context Context, inpath, outpath string, input io.R
 /**
  * Emit an import
  */
-func (c EJSCompiler) emitImport(context Context, inpath, outpath string, output io.Writer, resource string) error {
+func (c EJSCompiler) emitImport(context *Context, inpath, outpath string, output io.Writer, resource string) error {
+  var absolute string
   
-  if _, err := output.Write([]byte(fmt.Sprintf("/* #import \"%s\" */\n", inpath))); err != nil {
+  isurl, err := regexp.MatchString("^https?://", resource)
+  if err != nil {
+    return err
+  }else if isurl {
+    absolute = resource
+  }else if abs, err := filepath.Abs(path.Join(path.Dir(inpath), resource)); err != nil {
+    return err
+  }else{
+    absolute = abs
+  }
+  
+  if context.IsVisited(absolute) {
+    return nil
+  }else{
+    context.AddVisited(absolute)
+  }
+  
+  if _, err := output.Write([]byte(fmt.Sprintf("/* #import %+q */\n", resource))); err != nil {
     return err
   }
   
-  if m, err := regexp.MatchString("^https?://", resource); err != nil {
-    return err
-  }else if m {
+  if isurl {
     return c.emitImportURL(context, inpath, outpath, output, resource)
   }else{
-    return c.emitImportFile(context, inpath, outpath, output, resource)
+    return c.emitImportFile(context, inpath, outpath, output, absolute)
   }
   
 }
@@ -119,14 +149,14 @@ func (c EJSCompiler) emitImport(context Context, inpath, outpath string, output 
 /**
  * Emit an import
  */
-func (c EJSCompiler) emitImportURL(context Context, inpath, outpath string, output io.Writer, resource string) error {
+func (c EJSCompiler) emitImportURL(context *Context, inpath, outpath string, output io.Writer, resource string) error {
   
   resp, err := http.Get(resource)
   if err != nil {
     return err
+  }else{
+    defer resp.Body.Close()
   }
-  
-  defer resp.Body.Close()
   
   if _, err := io.Copy(output, resp.Body); err != nil {
     return err
@@ -138,14 +168,15 @@ func (c EJSCompiler) emitImportURL(context Context, inpath, outpath string, outp
 /**
  * Emit an import
  */
-func (c EJSCompiler) emitImportFile(context Context, inpath, outpath string, output io.Writer, resource string) error {
-  base := path.Dir(inpath)
-  if file, err := os.Open(path.Join(base, resource)); err != nil {
+func (c EJSCompiler) emitImportFile(context *Context, inpath, outpath string, output io.Writer, resource string) error {
+  
+  if file, err := os.Open(resource); err != nil {
     return fmt.Errorf("Could not import file (via %s): %s", inpath, err)
   }else if compiler, err := NewCompiler(context, file.Name()); err != nil {
     return err
   }else{
     return compiler.Compile(context, file.Name(), "", file, output);
   }
+  
 }
 

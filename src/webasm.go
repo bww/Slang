@@ -32,29 +32,32 @@ package main
 
 import (
   "os"
-  "io"
   "fmt"
   "flag"
   "path/filepath"
 )
 
+var OPTIONS = &Options{}
+
 func main() {
   
-  cmdline := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  fServer := cmdline.Bool   ("server",  false,  "Run the builtin server")
-  fPort   := cmdline.Int    ("port",    9090,   "The port to run the builtin server on")
-  fPeer   := cmdline.String ("proxy",   "",     "The address to reverse-proxy")
-  
-  fRoutes := make(AssocParams)
+  cmdline   := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+  fServer   := cmdline.Bool   ("server",  false,  "Run the builtin server")
+  fPort     := cmdline.Int    ("port",    9090,   "The port to run the builtin server on")
+  fPeer     := cmdline.String ("proxy",   "",     "The address to reverse-proxy")
+  fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose")
+  fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose")
+  fRoutes   := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routes, formatted as '<remote>=<local>'")
   cmdline.Parse(os.Args[1:]);
   
-  context := Context{}
+  OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose)
+  OPTIONS.SetFlag(optionsFlagDebug, *fDebug)
   
   if(*fServer){
-    runServer(context, *fPort, *fPeer, fRoutes)
+    runServer(*fPort, *fPeer, fRoutes)
   }else{
-    runCompile(context, cmdline)
+    runCompile(cmdline)
   }
   
 }
@@ -62,11 +65,11 @@ func main() {
 /**
  * Service
  */
-func runServer(context Context, port int, peer string, routes map[string]string) {
+func runServer(port int, peer string, routes map[string]string) {
   var server *Server
   var err error
   
-  if server, err = NewServer(context, port, peer, routes); err != nil {
+  if server, err = NewServer(port, peer, routes); err != nil {
     fmt.Println(err)
     return
   }
@@ -79,9 +82,10 @@ func runServer(context Context, port int, peer string, routes map[string]string)
 /**
  * Compile
  */
-func runCompile(context Context, cmdline *flag.FlagSet) {
+func runCompile(cmdline *flag.FlagSet) {
   for _, f := range cmdline.Args() {
-    var input io.Reader
+    var input *os.File
+    var fstat os.FileInfo
     var err error
     
     if input, err = os.Open(f); err != nil {
@@ -91,49 +95,76 @@ func runCompile(context Context, cmdline *flag.FlagSet) {
     
     defer input.Close()
     
-    if fstat, err := input.Stat(); err != nil {
+    if fstat, err = input.Stat(); err != nil {
       fmt.Println(err)
       return
     }
     
     if fstat.Mode().IsDir() {
-      d := DirectoryContext{context}
-      filepath.Walk(input.Name(), d.compileDirectoryResource)
+      w := &Walker{}
+      if err := filepath.Walk(input.Name(), w.compileResource); err != nil {
+        fmt.Println(err)
+        return
+      }
     }else{
-      compileResource(context, input)
+      c := NewContext()
+      if err := compileResource(c, input, fstat); err != nil {
+        fmt.Println(err)
+        return
+      }
     }
     
   }
 }
 
 /**
- * Walk context
- */
-type DirectoryContext struct {
-  context Context
-}
-
-/**
  * Compile a resource
  */
-func (c DirectoryContext) compileResource(path string, info os.FileInfo, err error) error {
-  if err != nil {
-    return err
+func compileResource(context *Context, input *os.File, info os.FileInfo) error {
+  inpath := input.Name()
+  
+  if !CanCompile(context, inpath) {
+    fmt.Printf("[ ] %s\n", inpath)
+    return nil
   }else{
-    return nil//compileResource(c.context, 
+    fmt.Printf("[+] %s\n", inpath)
   }
-}
-
-/**
- * Compile a resource
- */
-func compileResource(context Context, input *os.File) error {
-  if compiler, err := NewCompiler(context, input.Name()); err != nil {
+  
+  if compiler, err := NewCompiler(context, inpath); err != nil {
     return err
-  }else if err := compiler.Compile(context, input.Name(), input.Name() +".out", input, os.Stdout); err != nil {
+  }else if outpath, err := compiler.OutputPath(context, inpath); err != nil {
+    return err
+  }else if output, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0644); err != nil {
+    return err
+  }else if err := compiler.Compile(context, inpath, outpath, input, output); err != nil {
     return err
   }else{
     return nil
   }
+  
 }
+
+/**
+ * Walk context
+ */
+type Walker struct {
+  // ...
+}
+
+/**
+ * Compile a resource
+ */
+func (w Walker) compileResource(path string, info os.FileInfo, err error) error {
+  if err != nil {
+    return err
+  }else if info.Mode().IsDir() {
+    return nil // just descend
+  }else if input, err := os.Open(path); err != nil {
+    return err
+  }else{
+    defer input.Close()
+    return compileResource(NewContext(), input, info)
+  }
+}
+
 
