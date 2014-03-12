@@ -6,12 +6,13 @@ export CGO_LDFLAGS := -lc -lc++ -L../dep/libsass -lsass -L../dep/jsmin -ljsmin
 
 SOURCES=webasm.go flags.go options.go compiler.go compiler_chain.go compiler_sass.go compiler_jsmin.go compiler_ejs.go compiler_literal.go server.go server_proxy.go
 LIBRARY=$(LIBDIR)/src/ejs/scanner.go
+WEBASM=../webasm
 
-all: webasm
+all: $(WEBASM)
 
-webasm: $(SOURCES) $(LIBRARY)
-	go build -o webasm
+$(WEBASM): $(SOURCES) $(LIBRARY)
+	go build -o $(WEBASM)
 
 clean:
-	rm -f webasm
+	rm -f $(WEBASM)
 

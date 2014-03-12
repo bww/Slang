@@ -42,13 +42,13 @@ var OPTIONS = &Options{}
 func main() {
   
   cmdline   := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  fServer   := cmdline.Bool   ("server",  false,  "Run the builtin server")
-  fPort     := cmdline.Int    ("port",    9090,   "The port to run the builtin server on")
-  fPeer     := cmdline.String ("proxy",   "",     "The address to reverse-proxy")
-  fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose")
-  fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose")
+  fServer   := cmdline.Bool   ("server",  false,  "Run the built-in server.")
+  fPort     := cmdline.Int    ("port",    9090,   "The port on which to run the built-in server.")
+  fPeer     := cmdline.String ("proxy",   "",     "The base URL the built-in server should reverse-proxy for unmanaged resources.")
+  fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose.")
+  fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose.")
   fRoutes   := make(AssocParams)
-  cmdline.Var(&fRoutes, "route", "Routes, formatted as '<remote>=<local>'")
+  cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., webasm -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
   OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose)
@@ -83,7 +83,28 @@ func runServer(port int, peer string, routes map[string]string) {
  * Compile
  */
 func runCompile(cmdline *flag.FlagSet) {
-  for _, f := range cmdline.Args() {
+  
+  args := cmdline.Args()
+  
+  if len(args) < 1 {
+    fmt.Println("No resources provided to compile. Run webasm as one of the following.")
+    fmt.Println()
+    fmt.Println("Start the built-in server:")
+    fmt.Println("  $ webasm -server [...]")
+    fmt.Println()
+    fmt.Println("Compile specific assets:")
+    fmt.Println("  $ webasm file.scss file.ejs")
+    fmt.Println()
+    fmt.Println("Traverse a directory and compile all supported assets found in it:")
+    fmt.Println("  $ webasm assets/")
+    fmt.Println()
+    fmt.Println("Show command line options:")
+    fmt.Println("  $ webasm -h")
+    fmt.Println()
+    return
+  }
+  
+  for _, f := range args {
     var input *os.File
     var fstat os.FileInfo
     var err error
@@ -115,6 +136,7 @@ func runCompile(cmdline *flag.FlagSet) {
     }
     
   }
+  
 }
 
 /**
