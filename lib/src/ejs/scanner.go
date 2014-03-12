@@ -32,6 +32,8 @@ package ejs
 
 import (
   "fmt"
+  "math"
+  "strings"
   "strconv"
 	"unicode/utf8"
 )
@@ -51,15 +53,112 @@ type SourceError struct {
 /**
  * Create a source error
  */
-func NewSourceError(inpath, source string, index, line, column int, format string, args ...interface{}) SourceError {
-  return SourceError{ fmt.Sprintf(format, args...), inpath, source, index, line, column }
+func NewSourceError(inpath, source string, index, line, column int, format string, args ...interface{}) *SourceError {
+  return &SourceError{ fmt.Sprintf(format, args...), inpath, source, index, line, column }
 }
 
 /**
- * Obtain the error
+ * Obtain the full error
  */
-func (s SourceError) Error() string {
-  return fmt.Sprintf("%s:%d:%d %s", s.inpath, s.line + 1, s.column + 1, s.error)
+func (s *SourceError) Error() string {
+  return fmt.Sprintf("%s %s\n%s", s.Location(), s.Message(), s.Excerpt())
+}
+
+/**
+ * Obtain the error message
+ */
+func (s *SourceError) Message() string {
+  return s.error
+}
+
+/**
+ * Obtain the error resource and location
+ */
+func (s *SourceError) Location() string {
+  return fmt.Sprintf("%s:%d:%d", s.inpath, s.line + 1, s.column + 1)
+}
+
+/**
+ * Obtain the source excerpt
+ */
+func (s *SourceError) Excerpt() string {
+  return strings.Join(s.ExcerptLines(">>", "<<", 2), "\n")
+}
+
+/**
+ * Obtain the source excerpt lines
+ */
+func (s *SourceError) ExcerptLines(prefix, suffix string, context int) []string {
+  var e int
+  
+  start := int(math.Max(float64(0), float64(s.line - context)))
+  r := context * 2 + 1
+  c := start
+  l := 0
+  i := 0
+  
+  if start > 0 {
+    if i = countChar(s.source, '\n', start, 0); i < 0 {
+      return nil
+    }else{
+      i++
+    }
+  }
+  
+  excerpt := []string{}
+  
+  for i < len(s.source) && l < r {
+    
+    if e = strings.IndexRune(s.source[i:], '\n'); e < 0 {
+      return nil
+    }
+    
+    if c == s.line {
+      line := s.source[i:i+e]
+      if prefix == "" && suffix == "" {
+        var pointer string
+        for i := 0; i < s.column; i++ { pointer += " " }
+        pointer += "^"
+        excerpt = append(excerpt, line, pointer)
+      }else{
+        anno := line[0:s.column]
+        anno += prefix
+        if len(line) > s.column { anno += line[s.column:s.column+1] }
+        anno += suffix
+        if len(line) > (s.column + 1) { anno += line[s.column+1:] }
+        excerpt = append(excerpt, anno)
+      }
+    }else{
+      excerpt = append(excerpt, s.source[i:i+e])
+    }
+    
+    i += e + 1
+    c++
+    l++
+    
+  }
+  
+  return excerpt
+}
+
+/**
+ * Count n instances of the character c beginning at index o of the input string.
+ * The index of the final instance is returned or a negative value if n instances
+ * are not available in the string
+ */
+func countChar(s string, c rune, n, o int) int {
+  found := 0
+  
+  for i, r := range s[o:] {
+    if r == c {
+      found++
+      if found == n {
+        return o + i
+      }
+    }
+  }
+  
+  return -1
 }
 
 /**
@@ -106,7 +205,7 @@ func NewScanner(inpath, source string) *Scanner {
 /**
  * Create a source error based on the scanner's state
  */
-func (s *Scanner) errorf(format string, args ...interface{}) SourceError {
+func (s *Scanner) errorf(format string, args ...interface{}) *SourceError {
   return NewSourceError(s.inpath, s.source, s.index, s.line, s.column, format, args...)
 }
 

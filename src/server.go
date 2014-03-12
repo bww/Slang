@@ -39,6 +39,11 @@ import (
 )
 
 import (
+  "ejs"
+  "bww/errors"
+)
+
+import (
   "net/url"
   "net/http"
   "html/template"
@@ -233,7 +238,7 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
     s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Resource is not supported: %v", file.Name()))
     return
   }else if err := compiler.Compile(context, file.Name(), "", file, writer); err != nil {
-    s.serveError(writer, request, http.StatusInternalServerError, fmt.Errorf("Could not compile resource: %v", err))
+    s.serveError(writer, request, http.StatusInternalServerError, errors.NewError(err, "Could not compile resource"))
     return
   }
   
@@ -255,7 +260,38 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
     params := map[string]interface{} {
       "Title": "Error",
       "Header": fmt.Sprintf("%d: %s", status, http.StatusText(status)),
-      "Detail": problem,
+    }
+    
+    var message, detail string
+    
+    switch e := problem.(type) {
+      case *errors.Error:
+        message = e.Message()
+        problem = e.Cause()
+      default:
+        message = e.Error()
+        problem = nil
+    }
+    
+    params["Message"] = message
+    
+    for problem != nil {
+      switch e := problem.(type) {
+        case *errors.Error:
+          detail += fmt.Sprintf("%s\n\n", e.Message())
+          problem = e.Cause()
+        case *ejs.SourceError:
+          e.Excerpt()
+          detail += fmt.Sprintf("%s\n\n", e.Error())
+          problem = nil
+        default:
+          detail += fmt.Sprintf("%s\n\n", e.Error())
+          problem = nil
+      }
+    }
+    
+    if detail != "" {
+      params["Detail"] = detail
     }
     
     writer.Header().Add("Content-Type", "text/html")

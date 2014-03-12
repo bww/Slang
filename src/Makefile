@@ -5,7 +5,7 @@ export GOPATH := $(GOPATH):$(LIBDIR)
 export CGO_LDFLAGS := -lc -lc++ -L../dep/libsass -lsass -L../dep/jsmin -ljsmin
 
 SOURCES=webasm.go flags.go options.go compiler.go compiler_chain.go compiler_sass.go compiler_jsmin.go compiler_ejs.go compiler_literal.go server.go server_proxy.go
-LIBRARY=$(LIBDIR)/src/ejs/scanner.go
+LIBRARY=$(LIBDIR)/src/ejs/scanner.go $(LIBDIR)/src/bww/errors/errors.go
 WEBASM=../webasm
 
 all: $(WEBASM)
