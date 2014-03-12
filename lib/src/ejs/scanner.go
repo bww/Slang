@@ -33,8 +33,34 @@ package ejs
 import (
   "fmt"
   "strconv"
-  "unicode/utf8"
+	"unicode/utf8"
 )
+
+/**
+ * A source error
+ */
+type SourceError struct {
+  error     string
+  inpath    string
+  source    string
+  index     int
+  line      int
+  column    int
+}
+
+/**
+ * Create a source error
+ */
+func NewSourceError(inpath, source string, index, line, column int, format string, args ...interface{}) SourceError {
+  return SourceError{ fmt.Sprintf(format, args...), inpath, source, index, line, column }
+}
+
+/**
+ * Obtain the error
+ */
+func (s SourceError) Error() string {
+  return fmt.Sprintf("%s:%d:%d %s", s.inpath, s.line + 1, s.column + 1, s.error)
+}
 
 /**
  * Token types
@@ -66,13 +92,22 @@ type Scanner struct {
   length    int
   index     int
   width     int
+  line      int
+  column    int
 }
 
 /**
  * Create a scanner
  */
 func NewScanner(inpath, source string) *Scanner {
-  return &Scanner{inpath, source, len(source), 0, 0}
+  return &Scanner{inpath, source, len(source), 0, 0, 0, 0}
+}
+
+/**
+ * Create a source error based on the scanner's state
+ */
+func (s *Scanner) errorf(format string, args ...interface{}) SourceError {
+  return NewSourceError(s.inpath, s.source, s.index, s.line, s.column, format, args...)
 }
 
 /**
@@ -104,7 +139,7 @@ func (s *Scanner) Token() ([]Token, error) {
             return t, nil
           }
         }
-      
+        
     }
     p = r
   }
@@ -120,14 +155,14 @@ func (s *Scanner) directiveToken() ([]Token, error) {
   
   s.skipWhite()
   if id = s.scanIdentifier(); len(id) < 1 {
-    return nil, fmt.Errorf("Expected identifier after delimiter start '#'")
+    return nil, s.errorf("Expected identifier after delimiter start '#'")
   }
   
   switch id {
     case "import":
       return s.importToken()
     default:
-      return nil, fmt.Errorf("No such directive '%s'", id)
+      return nil, s.errorf("No such directive '%s'", id)
   }
   
 }
@@ -138,7 +173,7 @@ func (s *Scanner) directiveToken() ([]Token, error) {
 func (s *Scanner) importToken() ([]Token, error) {
   s.skipWhite()
   if resource, err := s.scanQuotedString(); err != nil {
-    return nil, err
+    return nil, s.errorf("Expected quoted string: %v", err)
   }else{
     return []Token{ Token{TokenTypeImport, resource} }, nil
   }
@@ -147,9 +182,18 @@ func (s *Scanner) importToken() ([]Token, error) {
 /**
  * Increment the cursor position
  */
-func (s *Scanner) inc(width int) int {
+func (s *Scanner) inc(ch rune, width int) int {
+  
 	s.width  = width
 	s.index += width
+	
+	if ch == '\n' {
+	  s.line++
+	  s.column = 0
+	}else{
+	  s.column++
+	}
+	
 	return s.index
 }
 
@@ -166,8 +210,7 @@ func (s *Scanner) peek() (rune, int) {
  */
 func (s *Scanner) next() rune {
 	r, w := s.peek()
-	s.width  = w
-	s.index += w
+	s.inc(r, w)
 	return r
 }
 
@@ -178,9 +221,10 @@ func (s *Scanner) scanIdentifier() string {
   var id string
   
   for {
-    r := s.next()
+    r, w := s.peek()
     if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_'  {
       id += string(r)
+      s.inc(r, w)
     }else{
       return id
     }
@@ -237,7 +281,7 @@ func (s *Scanner) scanEscape(quote rune) (rune, error) {
         return rune(v), nil
       }
     default:
-      return 0, fmt.Errorf("Invalid escape sequence")
+      return 0, s.errorf("Invalid escape sequence")
 	}
 	return ch, nil
 }
@@ -254,7 +298,7 @@ func (s *Scanner) scanDecimal(ch rune, base, n int) (int64, error) {
 	}
 	
 	if n > 0 {
-		return 0, fmt.Errorf("illegal char escape")
+		return 0, s.errorf("illegal char escape")
 	}
 	
 	return strconv.ParseInt(num, base, 64)
@@ -269,7 +313,7 @@ func (s *Scanner) scanQuotedString() (string, error) {
     case '"':
       return s.scanString('"')
     default:
-      return "", fmt.Errorf("Invalid quote character")
+      return "", s.errorf("Invalid quote character")
   }
 }
 
@@ -284,7 +328,7 @@ func (s *Scanner) scanString(quote rune) (string, error) {
 	  if ch == quote {
 	    return str, nil
 		}else if ch == '\n' || ch < 0 {
-			return "", fmt.Errorf("String is not terminated")
+			return "", s.errorf("String is not terminated")
 		}
 		
 		if ch == '\\' {
@@ -308,7 +352,7 @@ func (s *Scanner) skipWhite() {
   for {
     r, w := s.peek()
     if r <= ' ' {
-      s.inc(w)
+      s.inc(r, w)
     }else{
       return
     }
