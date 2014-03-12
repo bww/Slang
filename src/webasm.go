@@ -45,7 +45,7 @@ func main() {
   fServer   := cmdline.Bool   ("server",  false,  "Run the built-in server.")
   fPort     := cmdline.Int    ("port",    9090,   "The port on which to run the built-in server.")
   fPeer     := cmdline.String ("proxy",   "",     "The base URL the built-in server should reverse-proxy for unmanaged resources.")
-  fQuiet    := cmdline.Bool   ("quiet",   false,  "Be quiet. Only print error messages.")
+  fQuiet    := cmdline.Bool   ("quiet",   false,  "Be quiet. Only print error messages. (Overrides -verbose, -debug)")
   fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose.")
   fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose.")
   fRoutes   := make(AssocParams)
@@ -57,8 +57,8 @@ func main() {
   
   OPTIONS = &Options{home, 0}
   OPTIONS.SetFlag(optionsFlagQuiet,   *fQuiet)
-  OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose)
-  OPTIONS.SetFlag(optionsFlagDebug,   *fDebug)
+  OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose && !*fQuiet)
+  OPTIONS.SetFlag(optionsFlagDebug,   *fDebug && !*fQuiet)
   
   if(*fServer){
     runServer(*fPort, *fPeer, fRoutes)
@@ -192,7 +192,7 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
   
   if info.Mode().IsDir() {
     if hidden {
-      return filepath.SkipDir
+      return filepath.SkipDir // skip hidden directories
     }else{
       return nil // just descend
     }

@@ -56,11 +56,21 @@ var MIMETYPES = map[string]string {
 }
 
 /**
+ * Managed resource extensions
+ */
+var MANAGED_EXTENSIONS = map[string]bool {
+  ".css":   true,
+  ".scss":  true,
+  ".ejs":   true,
+  ".js":    true,
+}
+
+/**
  * A server
  */
 type Server struct {
   port    int
-  peer    string
+  peer    *url.URL
   routes  map[string]string
   proxy   *ReverseProxy
 }
@@ -70,39 +80,41 @@ type Server struct {
  */
 func NewServer(port int, peer string, routes map[string]string) (*Server, error) {
   var proxy *ReverseProxy = nil
+  var peerURL *url.URL = nil
   
   if peer != "" {
-    if u, err := url.Parse(peer); err != nil {
+    var err error
+    if peerURL, err = url.Parse(peer); err != nil {
       return nil, err
     }else{
-      proxy = NewSingleHostReverseProxy(u)
+      proxy = NewSingleHostReverseProxy(peerURL)
     }
   }
   
-  return &Server{port, peer, routes, proxy}, nil
+  return &Server{port, peerURL, routes, proxy}, nil
 }
 
 /**
  * Run the server
  */
 func (s *Server) Run() {
-  http.HandleFunc("/", s.handler)
+  
+  if s.proxy != nil {
+    http.HandleFunc("/", s.handler)
+  }else{
+    http.HandleFunc("/", s.serveRequest)
+  }
+  
   http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
+  
 }
 
 /**
  * Handle a request
  */
 func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
-  if s.proxy == nil {
+  if strings.ToUpper(request.Method) == "GET" && MANAGED_EXTENSIONS[path.Ext(request.URL.Path)] {
     s.serveRequest(writer, request)
-  }else if strings.ToUpper(request.Method) == "GET" {
-    switch path.Ext(request.URL.Path) {
-      case ".css", ".scss", ".ejs", ".js":
-        s.serveRequest(writer, request)
-      default:
-        s.proxyRequest(writer, request)
-    }
   }else{
     s.proxyRequest(writer, request)
   }
@@ -112,11 +124,19 @@ func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
  * Proxy a request
  */
 func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request) {
+  
+  if s.proxy != nil && OPTIONS.GetFlag(optionsFlagVerbose) {
+    if u, err := url.Parse(request.URL.Path); err == nil {
+      log.Printf("%s %s \u2192 %v", request.Method, request.URL.Path, s.peer.ResolveReference(u))
+    }
+  }
+  
   if s.proxy == nil {
     s.serveError(writer, request, http.StatusBadGateway, fmt.Errorf("No proxy is configured for non-managed resource: %s", request.URL.Path))
   }else if err := s.proxy.ServeHTTP(writer, request); err != nil {
     s.serveError(writer, request, http.StatusBadGateway, err)
   }
+  
 }
 
 /**
@@ -170,22 +190,24 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
     return
   }
   
+  if OPTIONS.GetFlag(optionsFlagVerbose) {
+    log.Printf("%s %s \u2192 {%s}", request.Method, request.URL.Path, strings.Join(candidates, ", "))
+  }
+  
   for _, e := range candidates {
-    fmt.Println(request.URL.Path, "->", e)
-    
     if file, err = os.Open(e); err == nil {
       defer file.Close()
+      if !OPTIONS.GetFlag(optionsFlagQuiet) { log.Printf("%s %s \u2192 %s", request.Method, request.URL.Path, e) }
       writer.Header().Add("Content-Type", mimetype)
       s.compileAndServeFile(writer, request, file)
       return
     }
-    
   }
   
   // make this a flag or something...
   strict := false
   
-  if strict {
+  if strict || s.proxy == nil {
     s.serveError(writer, request, http.StatusNotFound, fmt.Errorf("No such resource: %s", request.URL.Path))
   }else{
     s.proxyRequest(writer, request)
@@ -221,10 +243,10 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
  * Serve an error
  */
 func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, problem error) {
-  log.Println(problem)
+  log.Println("ERROR:", problem)
   if t, err := template.ParseFiles(OPTIONS.Resource("html/error.html")); err != nil {
     
-    fmt.Printf("Could not compile template: %v\n", err)
+    log.Printf("ERROR: Could not compile template: %v\n", err)
     writer.WriteHeader(status)
     writer.Write([]byte(problem.Error()))
     
