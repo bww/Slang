@@ -239,7 +239,7 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
     s.serveError(writer, request, http.StatusBadRequest, fmt.Errorf("Resource is not supported: %v", file.Name()))
     return
   }else if err := compiler.Compile(context, file.Name(), "", file, writer); err != nil {
-    s.serveError(writer, request, http.StatusInternalServerError, errors.NewError(err, "Could not compile resource"))
+    s.serveError(writer, request, http.StatusInternalServerError, err)
     return
   }
   
