@@ -287,8 +287,7 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
           lines := e.ExcerptLines("<span class=\"marker\">", "</span>", html.EscapeString, 3)
           excerpt := make([]template.HTML, len(lines))
           for i, l := range lines { excerpt[i] = template.HTML(l) }
-          issues = append(issues, &templateError{e.Message(), excerpt, e.Line()})
-          //detail += fmt.Sprintf("%s %s\n\n%s\n\n", html.EscapeString(e.Location()), html.EscapeString(e.Message()), strings.Join(e.ExcerptLines("<span class=\"marker\">", "</span>", html.EscapeString, 3), "\n"))
+          issues = append(issues, &templateError{fmt.Sprintf("%s\n%s", e.Location(), e.Message()), excerpt, e.Line()})
           problem = nil
         default:
           issues = append(issues, &templateError{e.Error(), nil, 0})

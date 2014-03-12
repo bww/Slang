@@ -45,8 +45,12 @@
 				font-size: 12px;
 				overflow: hidden;
 			}
+			pre.detail {
+        border-bottom: 1px solid #ccc;
+			}
 			pre.line {
 			  padding: 5px 54px;
+        border-bottom: 1px solid #ccc;
 			}
 			.marker {
 			  color: #fff;
@@ -60,7 +64,7 @@
 		{{range .Errors}}
       <pre class="detail">{{.Message}}</pre>
       {{range .Source}}
-        <pre class="line">{{.}}</pre>
+        <pre class="line">{{.}} </pre>
       {{end}}
     {{end}}
 	</body>
