@@ -45,18 +45,18 @@ func main() {
   fServer   := cmdline.Bool   ("server",  false,  "Run the built-in server.")
   fPort     := cmdline.Int    ("port",    9090,   "The port on which to run the built-in server.")
   fPeer     := cmdline.String ("proxy",   "",     "The base URL the built-in server should reverse-proxy for unmanaged resources.")
+  fQuiet    := cmdline.Bool   ("quiet",   false,  "Be quiet. Only print error messages.")
   fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose.")
   fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose.")
   fRoutes   := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., webasm -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
-  if home, err := filepath.Abs(filepath.Dir(os.Args[0])); err != nil {
-    panic(err)
-  }else{
-    OPTIONS = &Options{home,0}
-  }
+  home, err := filepath.Abs(filepath.Dir(os.Args[0]))
+  if err != nil { panic(err) }
   
+  OPTIONS = &Options{home, 0}
+  OPTIONS.SetFlag(optionsFlagQuiet,   *fQuiet)
   OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose)
   OPTIONS.SetFlag(optionsFlagDebug,   *fDebug)
   
@@ -152,10 +152,10 @@ func compileResource(context *Context, input *os.File, info os.FileInfo) error {
   inpath := input.Name()
   
   if !CanCompile(context, inpath) {
-    fmt.Printf("[ ] %s\n", inpath)
+    if !OPTIONS.GetFlag(optionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
     return nil
   }else{
-    fmt.Printf("[+] %s\n", inpath)
+    if !OPTIONS.GetFlag(optionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
   }
   
   if compiler, err := NewCompiler(context, inpath); err != nil {
@@ -183,16 +183,33 @@ type Walker struct {
  * Compile a resource
  */
 func (w Walker) compileResource(path string, info os.FileInfo, err error) error {
+  
   if err != nil {
     return err
-  }else if info.Mode().IsDir() {
-    return nil // just descend
-  }else if input, err := os.Open(path); err != nil {
+  }
+  
+  hidden := info.Name()[0] == '.'
+  
+  if info.Mode().IsDir() {
+    if hidden {
+      return filepath.SkipDir
+    }else{
+      return nil // just descend
+    }
+  }
+  
+  if hidden {
+    return nil // skip hidden files
+  }
+  
+  input, err := os.Open(path)
+  if err != nil {
     return err
   }else{
     defer input.Close()
-    return compileResource(NewContext(), input, info)
   }
+  
+  return compileResource(NewContext(), input, info)
 }
 
 

@@ -36,8 +36,9 @@ import (
 
 const (
   optionsFlagNone       = 0
-  optionsFlagVerbose    = 1 << 0
-  optionsFlagDebug      = 1 << 1
+  optionsFlagQuiet      = 1 << 0
+  optionsFlagVerbose    = 1 << 1
+  optionsFlagDebug      = 1 << 2
 )
 
 /**
@@ -76,7 +77,7 @@ func (o *Options) SetFlag(flag int, set bool) {
   if set {
     o.flags |= flag
   }else{
-    o.flags ^= flag
+    o.flags &^= flag
   }
 }
 
