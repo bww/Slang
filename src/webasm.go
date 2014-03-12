@@ -188,7 +188,7 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
     return err
   }
   
-  hidden := info.Name()[0] == '.'
+  hidden := info.Name() != "." && info.Name()[0] == '.'
   
   if info.Mode().IsDir() {
     if hidden {
