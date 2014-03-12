@@ -222,7 +222,7 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
  */
 func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, problem error) {
   log.Println(problem)
-  if t, err := template.ParseFiles("resources/html/error.html"); err != nil {
+  if t, err := template.ParseFiles(OPTIONS.Resource("html/error.html")); err != nil {
     
     fmt.Printf("Could not compile template: %v\n", err)
     writer.WriteHeader(status)

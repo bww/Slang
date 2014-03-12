@@ -30,6 +30,10 @@
 
 package main
 
+import (
+  "path"
+)
+
 const (
   optionsFlagNone       = 0
   optionsFlagVerbose    = 1 << 0
@@ -40,7 +44,22 @@ const (
  * Options
  */
 type Options struct {
+  home      string
   flags     int
+}
+
+/**
+ * Obtain our home path
+ */
+func (o *Options) Home() string {
+  return o.home
+}
+
+/**
+ * Obtain a resource path
+ */
+func (o *Options) Resource(relative string) string {
+  return path.Join(o.home, "resources", relative)
 }
 
 /**

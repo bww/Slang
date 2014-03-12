@@ -37,7 +37,7 @@ import (
   "path/filepath"
 )
 
-var OPTIONS = &Options{}
+var OPTIONS *Options
 
 func main() {
   
@@ -51,8 +51,14 @@ func main() {
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., webasm -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
+  if home, err := filepath.Abs(filepath.Dir(os.Args[0])); err != nil {
+    panic(err)
+  }else{
+    OPTIONS = &Options{home,0}
+  }
+  
   OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose)
-  OPTIONS.SetFlag(optionsFlagDebug, *fDebug)
+  OPTIONS.SetFlag(optionsFlagDebug,   *fDebug)
   
   if(*fServer){
     runServer(*fPort, *fPeer, fRoutes)
@@ -74,7 +80,7 @@ func runServer(port int, peer string, routes map[string]string) {
     return
   }
   
-  fmt.Printf("Starting Webasm on port %d\n", port)
+  fmt.Printf("Starting the Webasm server on: http://localhost:%d/\n", port)
   server.Run()
   
 }
