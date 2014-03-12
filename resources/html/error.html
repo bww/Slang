@@ -45,12 +45,24 @@
 				font-size: 12px;
 				overflow: hidden;
 			}
+			pre.line {
+			  padding: 5px 54px;
+			}
+			.marker {
+			  color: #fff;
+			  background: #a00;
+			}
 		</style>
 	</head>
 	<body>
 		<h1>{{.Header}}</h1>
 		<p id="message">{{.Message}}</p>
-		<pre id="detail">{{.Detail}}</pre>
+		{{range .Errors}}
+      <pre class="detail">{{.Message}}</pre>
+      {{range .Source}}
+        <pre class="line">{{.}}</pre>
+      {{end}}
+    {{end}}
 	</body>
 </html>
 

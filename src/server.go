@@ -46,6 +46,7 @@ import (
 import (
   "net/url"
   "net/http"
+  "html"
   "html/template"
 )
 
@@ -245,6 +246,15 @@ func (s *Server) compileAndServeFile(writer http.ResponseWriter, request *http.R
 }
 
 /**
+ * An error
+ */
+type templateError struct {
+  Message   string
+  Source    []template.HTML
+  Base      int
+}
+
+/**
  * Serve an error
  */
 func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, status int, problem error) {
@@ -256,13 +266,8 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
     writer.Write([]byte(problem.Error()))
     
   }else{
-    
-    params := map[string]interface{} {
-      "Title": "Error",
-      "Header": fmt.Sprintf("%d: %s", status, http.StatusText(status)),
-    }
-    
-    var message, detail string
+    var issues []*templateError
+    var message string
     
     switch e := problem.(type) {
       case *errors.Error:
@@ -273,25 +278,29 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
         problem = nil
     }
     
-    params["Message"] = message
-    
     for problem != nil {
       switch e := problem.(type) {
         case *errors.Error:
-          detail += fmt.Sprintf("%s\n\n", e.Message())
+          issues = append(issues, &templateError{e.Message(), nil, 0})
           problem = e.Cause()
         case *ejs.SourceError:
-          e.Excerpt()
-          detail += fmt.Sprintf("%s\n\n", e.Error())
+          lines := e.ExcerptLines("<span class=\"marker\">", "</span>", html.EscapeString, 3)
+          excerpt := make([]template.HTML, len(lines))
+          for i, l := range lines { excerpt[i] = template.HTML(l) }
+          issues = append(issues, &templateError{e.Message(), excerpt, e.Line()})
+          //detail += fmt.Sprintf("%s %s\n\n%s\n\n", html.EscapeString(e.Location()), html.EscapeString(e.Message()), strings.Join(e.ExcerptLines("<span class=\"marker\">", "</span>", html.EscapeString, 3), "\n"))
           problem = nil
         default:
-          detail += fmt.Sprintf("%s\n\n", e.Error())
+          issues = append(issues, &templateError{e.Error(), nil, 0})
           problem = nil
       }
     }
     
-    if detail != "" {
-      params["Detail"] = detail
+    params := map[string]interface{} {
+      "Title":    "Error",
+      "Header":   fmt.Sprintf("%d: %s", status, http.StatusText(status)),
+      "Message":  message,
+      "Errors":   issues,
     }
     
     writer.Header().Add("Content-Type", "text/html")

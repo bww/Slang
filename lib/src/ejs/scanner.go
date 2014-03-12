@@ -51,6 +51,19 @@ type SourceError struct {
 }
 
 /**
+ * A function that escapes source lines. You can provide a source escaping function to
+ * process source lines in an excerpt.
+ */
+type SourceEscapeFunction func (string) string
+
+/**
+ * The default passthrough escape function
+ */
+func passThroughSourceEscape(source string) string {
+  return source
+}
+
+/**
  * Create a source error
  */
 func NewSourceError(inpath, source string, index, line, column int, format string, args ...interface{}) *SourceError {
@@ -72,6 +85,20 @@ func (s *SourceError) Message() string {
 }
 
 /**
+ * Obtain the error line
+ */
+func (s *SourceError) Line() int {
+  return s.line
+}
+
+/**
+ * Obtain the error column
+ */
+func (s *SourceError) Column() int {
+  return s.column
+}
+
+/**
  * Obtain the error resource and location
  */
 func (s *SourceError) Location() string {
@@ -82,14 +109,21 @@ func (s *SourceError) Location() string {
  * Obtain the source excerpt
  */
 func (s *SourceError) Excerpt() string {
-  return strings.Join(s.ExcerptLines(">>", "<<", 2), "\n")
+  return strings.Join(s.ExcerptLines("", "", nil, 0), "\n")
 }
 
 /**
- * Obtain the source excerpt lines
+ * Obtain the source excerpt lines. You can provide a source escape function to process
+ * lines of source in the excerpt. The prefix and suffix are not processed with the source
+ * escape function. This allows you, for example, to escape HTML in source lines but leave
+ * HTML in the prefix and suffix intact.
  */
-func (s *SourceError) ExcerptLines(prefix, suffix string, context int) []string {
+func (s *SourceError) ExcerptLines(prefix, suffix string, escape SourceEscapeFunction, context int) []string {
   var e int
+  
+  if escape == nil {
+    escape = passThroughSourceEscape
+  }
   
   start := int(math.Max(float64(0), float64(s.line - context)))
   r := context * 2 + 1
@@ -119,17 +153,21 @@ func (s *SourceError) ExcerptLines(prefix, suffix string, context int) []string 
         var pointer string
         for i := 0; i < s.column; i++ { pointer += " " }
         pointer += "^"
-        excerpt = append(excerpt, line, pointer)
+        excerpt = append(excerpt, escape(line), escape(pointer))
       }else{
-        anno := line[0:s.column]
+        anno := escape(line[0:s.column])
         anno += prefix
-        if len(line) > s.column { anno += line[s.column:s.column+1] }
+        if len(line) > s.column {
+          anno += escape(line[s.column:s.column+1])
+        }
         anno += suffix
-        if len(line) > (s.column + 1) { anno += line[s.column+1:] }
+        if len(line) > (s.column + 1) {
+          anno += escape(line[s.column+1:])
+        }
         excerpt = append(excerpt, anno)
       }
     }else{
-      excerpt = append(excerpt, s.source[i:i+e])
+      excerpt = append(excerpt, escape(s.source[i:i+e]))
     }
     
     i += e + 1
