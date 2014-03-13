@@ -103,7 +103,7 @@ func NewServer(port int, peer string, routes map[string]string) (*Server, error)
 /**
  * Run the server
  */
-func (s *Server) Run() {
+func (s *Server) Run() error {
   
   if s.proxy != nil {
     http.HandleFunc("/", s.handler)
@@ -111,8 +111,7 @@ func (s *Server) Run() {
     http.HandleFunc("/", s.serveRequest)
   }
   
-  http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
-  
+  return http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
 }
 
 /**
@@ -273,6 +272,9 @@ func (s *Server) serveError(writer http.ResponseWriter, request *http.Request, s
       case *errors.Error:
         message = e.Message()
         problem = e.Cause()
+      case *ejs.SourceError:
+        message = "Compilation error"
+        // same error gets processed below
       default:
         message = e.Error()
         problem = nil

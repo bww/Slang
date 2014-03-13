@@ -81,7 +81,10 @@ func runServer(port int, peer string, routes map[string]string) {
   }
   
   fmt.Printf("Starting the Webasm server on: http://localhost:%d/\n", port)
-  server.Run()
+  if err := server.Run(); err != nil {
+    fmt.Println(err)
+    return
+  }
   
 }
 

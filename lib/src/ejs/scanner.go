@@ -292,7 +292,7 @@ func (s *Scanner) directiveToken() ([]Token, error) {
   
   s.skipWhite()
   if id = s.scanIdentifier(); len(id) < 1 {
-    return nil, s.errorf("Expected identifier after delimiter start '#'")
+    return nil, s.errorf("Expected macro identifier after '#'")
   }
   
   switch id {
