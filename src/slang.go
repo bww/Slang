@@ -1,6 +1,6 @@
 // 
 // Copyright (c) 2014 Brian William Wolter, All rights reserved.
-// Webasm
+// Slang
 // 
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -80,7 +80,7 @@ func runServer(port int, peer string, routes map[string]string) {
     return
   }
   
-  fmt.Printf("Starting the Webasm server on: http://localhost:%d/\n", port)
+  fmt.Printf("Starting the Slang server on: http://localhost:%d/\n", port)
   if err := server.Run(); err != nil {
     fmt.Println(err)
     return

@@ -1,55 +1,55 @@
-Webasm
+Slang
 ======
 
-The latest and best incarnation of Web Assembler.
+A thing that builds websites.
 
 About
 -----
 
-*Web Assembler* includes a specialized built-in server that compiles and serves assets as they are requested. You can test your site directly from this server or you can run Web Assembler in tandem with whatever app server you use.
+*Slang* includes a specialized built-in server that compiles and serves assets as they are requested. You can test your site directly from this server or you can run Slang in tandem with whatever app server you use.
 
-When you make requests to the Web Assembler server it determines whether that request is for a resource that Web Assembler manages (such as SCSS, EJS, JS files) and, if so, it compiles and responds with that resource.
+When you make requests to the Slang server it determines whether that request is for a resource that Slang manages (such as SCSS, EJS, JS files) and, if so, it compiles and responds with that resource.
 
-Requests for resources that Web Assembler does not manage directly (such as HTML) are either reverse-proxied to your app server (if so configured) or copied from disk without modification.
+Requests for resources that Slang does not manage directly (such as HTML) are either reverse-proxied to your app server (if so configured) or copied from disk without modification.
 
-Running Webasm
+Running Slang
 --------------
 
-If you are only have static assets, you can start the Web Assembler server by running the following command.
+If you are only have static assets, you can start the Slang server by running the following command.
 
-	$ webasm -server
+	$ slang -server
 
-If you are using Web Assembler in tandem with an app server you need to provide the URL to the app server it will reverse proxy.
+If you are using Slang in tandem with an app server you need to provide the URL to the app server it will reverse proxy.
 
-	$ webasm -server -proxy http://localhost:8080/
+	$ slang -server -proxy http://localhost:8080/
 
-In either case Web Assembler looks for resources relative to the directory you run it in. If your app server maps any assets that Web Assembler manages to a different path than they exist in the filesystem, you can provide explicit route mappings.
+In either case Slang looks for resources relative to the directory you run it in. If your app server maps any assets that Slang manages to a different path than they exist in the filesystem, you can provide explicit route mappings.
 
-	$ webasm -server -proxy http://localhost:8080/ -route /assets/css=/stylesheets
+	$ slang -server -proxy http://localhost:8080/ -route /assets/css=/stylesheets
 
 In this example, the URL `http://localhost:9090/assets/css/style.css` would be mapped to the file at `./stylesheets/style.css`.
 
 Packaging Projects
 ------------------
 
-The built-in Web Assembler server compiles assets in memory but does not write them to disk. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
+The built-in Slang server compiles assets in memory but does not write them to disk. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
 
-To package your project, simply point Web Assembler at the root under which your assets are located.
+To package your project, simply point Slang at the root under which your assets are located.
 
-	$ webasm ./assets
+	$ slang ./assets
 
-Web Assembler will traverse the directory and compile any supported assets it encounters. For example, a file named `assets/site.ejs` will be compiled by Web Assembler and written to `assets/site.js`. Take care when naming your files, any file already existing at an output path will be overwritten.
+Slang will traverse the directory and compile any supported assets it encounters. For example, a file named `assets/site.ejs` will be compiled by Slang and written to `assets/site.js`. Take care when naming your files, any file already existing at an output path will be overwritten.
 
 What Gets Processed
 -------------------
 
-Web Assembler will process all the file types it understands for you. Currently that includes SASS, EJS, and Javascript files.
+Slang will process all the file types it understands for you. Currently that includes SASS, EJS, and Javascript files.
 
-Web Assembler does not require you to maintain an explicit configuration file, it knows what to do based on some well-established conventions. As a result, *you must take care to follow these conventions* when naming your files or Web Assembler will not work as expected.
+Slang does not require you to maintain an explicit configuration file, it knows what to do based on some well-established conventions. As a result, *you must take care to follow these conventions* when naming your files or Slang will not work as expected.
 
 ### Output Formats
 
-To determine what to do with a file, Web Assembler looks at the file's extension(s). The extensions `.js` and `.css` are considered to be *output formats*. These extensions are considered to be final and complete; they are not processed at all.
+To determine what to do with a file, Slang looks at the file's extension(s). The extensions `.js` and `.css` are considered to be *output formats*. These extensions are considered to be final and complete; they are not processed at all.
 
 * `file.css` → *no action* → `file.css`
 * `file.js` → *no action* → `file.js`
@@ -68,15 +68,15 @@ The secondary extension `.min` is handled somewhat differently from the conventi
 * `file.min.ejs` → *ejs compiler*  → *minimizer* → `file.js`
 * `file.min.js` → *minimizer* → `file.js`
 
-This somewhat unusual handling may cause problems when you are using already-minimized Javascript library files. To work around this quirk, use the unminimized development version of libraries in your project and let Web Assembler minimize them for you.
+This somewhat unusual handling may cause problems when you are using already-minimized Javascript library files. To work around this quirk, use the unminimized development version of libraries in your project and let Slang minimize them for you.
 
 ### Reverse Mapping
 
-When running in server mode during development these conventions are reversed. In your HTML you should reference the *output format* version of your assets. Web Assembler maps these back to their counterpart input format in your project. For example, when referencing the following stylesheet:
+When running in server mode during development these conventions are reversed. In your HTML you should reference the *output format* version of your assets. Slang maps these back to their counterpart input format in your project. For example, when referencing the following stylesheet:
 
 	<link rel="stylesheet" href="css/style.css" />
 
-The Web Assembler server will check for the following resources, in order. The first resource it encounteres will be compiled as appropriate and responded with:
+The Slang server will check for the following resources, in order. The first resource it encounteres will be compiled as appropriate and responded with:
 
 1. `css/style.min.scss`
 2. `css/style.scss`
@@ -117,9 +117,9 @@ The `import` macro is used like this:
 
 	#import "another_file.js"
 
-When Web Assembler encounters an `import` macro in an EJS file it replaces the `import` statement itself with the entire contents of the file it references. Imported files are declared relative to the file that is importing it.
+When Slang encounters an `import` macro in an EJS file it replaces the `import` statement itself with the entire contents of the file it references. Imported files are declared relative to the file that is importing it.
 
-To import a file from a URL you can use the following. Web Assembler automatically detects that this is a URL and fetches it. Only `http` and `https` URLs are supported for the `import` macro.
+To import a file from a URL you can use the following. Slang automatically detects that this is a URL and fetches it. Only `http` and `https` URLs are supported for the `import` macro.
 
 	#import "http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"
 
