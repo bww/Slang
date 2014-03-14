@@ -50,6 +50,9 @@ const (
   OptionsFlagDebug      = 1 << 2
 )
 
+/**
+ * Shared options / global config
+ */
 var __options *Options
 
 /**
@@ -79,17 +82,6 @@ type config struct {
   Debug     bool                  `toml:"debug"`
   Server    ServerOptions         `toml:"server"`
   Routes    map[string]string     `toml:"routes"`
-}
-
-/**
- * Obtain the shared options
- */
-func SharedOptions() (*Options) {
-  if __options != nil {
-    return __options
-  }else{
-    panic(fmt.Errorf("No configuration"));
-  }
 }
 
 /**
@@ -152,6 +144,17 @@ func InitOptions(configPath string) (*Options) {
   __options = options
   
   return options
+}
+
+/**
+ * Obtain the shared options
+ */
+func SharedOptions() (*Options) {
+  if __options != nil {
+    return __options
+  }else{
+    panic(fmt.Errorf("No configuration"));
+  }
 }
 
 /**
