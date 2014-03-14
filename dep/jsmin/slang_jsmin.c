@@ -1,6 +1,6 @@
 // 
 // Copyright (c) 2014 Brian William Wolter, All rights reserved.
-// Webasm
+// Slang
 // 
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -34,7 +34,7 @@
 // https://github.com/rf-/jsminc/blob/master/LICENSE
 // 
 
-#include "webasm_jsmin.h"
+#include "slang_jsmin.h"
 
 #include <string.h>
 #include <stdlib.h>

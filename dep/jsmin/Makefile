@@ -5,7 +5,7 @@ LDFLAGS =
 PREFIX    = /usr/local
 LIBDIR    = $(PREFIX)/lib
 
-SOURCES = webasm_jsmin.c
+SOURCES = slang_jsmin.c
 OBJECTS = $(SOURCES:.c=.o)
 
 all: static
