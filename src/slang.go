@@ -49,7 +49,7 @@ func main() {
   fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose.")
   fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose.")
   fRoutes   := make(AssocParams)
-  cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., webasm -server -route /css=/styles -route /js=/app/js [...].")
+  cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
   home, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -96,19 +96,19 @@ func runCompile(cmdline *flag.FlagSet) {
   args := cmdline.Args()
   
   if len(args) < 1 {
-    fmt.Println("No resources provided to compile. Run webasm as one of the following.")
+    fmt.Println("No resources provided to compile. Run Slang as one of the following.")
     fmt.Println()
     fmt.Println("Start the built-in server:")
-    fmt.Println("  $ webasm -server [...]")
+    fmt.Println("  $ slang -server [...]")
     fmt.Println()
     fmt.Println("Compile specific assets:")
-    fmt.Println("  $ webasm file.scss file.ejs")
+    fmt.Println("  $ slang file.scss file.ejs")
     fmt.Println()
     fmt.Println("Traverse a directory and compile all supported assets found in it:")
-    fmt.Println("  $ webasm assets/")
+    fmt.Println("  $ slang assets/")
     fmt.Println()
     fmt.Println("Show command line options:")
-    fmt.Println("  $ webasm -h")
+    fmt.Println("  $ slang -h")
     fmt.Println()
     return
   }
