@@ -41,6 +41,8 @@ var OPTIONS *Options
 
 func main() {
   
+  options := SharedOptions()
+  
   cmdline   := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
   fServer   := cmdline.Bool   ("server",  false,  "Run the built-in server.")
   fPort     := cmdline.Int    ("port",    9090,   "The port on which to run the built-in server.")
@@ -48,24 +50,31 @@ func main() {
   fQuiet    := cmdline.Bool   ("quiet",   false,  "Be quiet. Only print error messages. (Overrides -verbose, -debug)")
   fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose.")
   fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose.")
+  fInit     := cmdline.Bool   ("init",    false,  "Initialize a Slang configuration file in the current directory.")
   fRoutes   := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
-  home, err := filepath.Abs(filepath.Dir(os.Args[0]))
-  if err != nil { panic(err) }
-  
-  OPTIONS = &Options{home, 0}
+  OPTIONS = options
   OPTIONS.SetFlag(optionsFlagQuiet,   *fQuiet)
   OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose && !*fQuiet)
   OPTIONS.SetFlag(optionsFlagDebug,   *fDebug && !*fQuiet)
   
-  if(*fServer){
+  if(*fInit){
+    runInit()
+  }else if(*fServer){
     runServer(*fPort, *fPeer, fRoutes)
   }else{
     runCompile(cmdline)
   }
   
+}
+
+/**
+ * Initialize config
+ */
+func runInit() {
+  // ...
 }
 
 /**
