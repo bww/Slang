@@ -41,12 +41,12 @@ var OPTIONS *Options
 
 func main() {
   
-  options := SharedOptions()
-  
+  // process the command line
   cmdline   := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+  fConfig   := cmdline.String ("config",  "",     "Specify a particular configuration to use.")
   fServer   := cmdline.Bool   ("server",  false,  "Run the built-in server.")
   fPort     := cmdline.Int    ("port",    9090,   "The port on which to run the built-in server.")
-  fPeer     := cmdline.String ("proxy",   "",     "The base URL the built-in server should reverse-proxy for unmanaged resources.")
+  fProxy    := cmdline.String ("proxy",   "",     "The base URL the built-in server should reverse-proxy for unmanaged resources.")
   fQuiet    := cmdline.Bool   ("quiet",   false,  "Be quiet. Only print error messages. (Overrides -verbose, -debug)")
   fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose.")
   fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose.")
@@ -55,15 +55,32 @@ func main() {
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
-  OPTIONS = options
-  OPTIONS.SetFlag(optionsFlagQuiet,   *fQuiet)
-  OPTIONS.SetFlag(optionsFlagVerbose, *fVerbose && !*fQuiet)
-  OPTIONS.SetFlag(optionsFlagDebug,   *fDebug && !*fQuiet)
+  // initialize our options
+  options := InitOptions(*fConfig)
   
+  // server config
+  if *fPort != options.Server.Port {
+    options.Server.Port = *fPort
+  }
+  if *fProxy != "" {
+    options.Server.Proxy = *fProxy
+  }
+  
+  // routes definitions
+  if len(fRoutes) > 0 {
+    options.Routes = fRoutes
+  }
+  
+  // apply command line flags
+  if *fQuiet    { options.SetFlag(OptionsFlagQuiet,   *fQuiet) }
+  if *fVerbose  { options.SetFlag(OptionsFlagVerbose, *fVerbose && !options.GetFlag(OptionsFlagQuiet)) }
+  if *fDebug    { options.SetFlag(OptionsFlagDebug,   *fDebug   && !options.GetFlag(OptionsFlagQuiet)) }
+  
+  // do something useful
   if(*fInit){
     runInit()
   }else if(*fServer){
-    runServer(*fPort, *fPeer, fRoutes)
+    runServer(options.Server.Port, options.Server.Proxy, options.Routes)
   }else{
     runCompile(cmdline)
   }
@@ -164,10 +181,10 @@ func compileResource(context *Context, input *os.File, info os.FileInfo) error {
   inpath := input.Name()
   
   if !CanCompile(context, inpath) {
-    if !OPTIONS.GetFlag(optionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
+    if !OPTIONS.GetFlag(OptionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
     return nil
   }else{
-    if !OPTIONS.GetFlag(optionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
+    if !OPTIONS.GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
   }
   
   if compiler, err := NewCompiler(context, inpath); err != nil {

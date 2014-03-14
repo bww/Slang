@@ -130,7 +130,7 @@ func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
  */
 func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request) {
   
-  if s.proxy != nil && OPTIONS.GetFlag(optionsFlagVerbose) {
+  if s.proxy != nil && OPTIONS.GetFlag(OptionsFlagVerbose) {
     if u, err := url.Parse(request.URL.Path); err == nil {
       log.Printf("%s %s \u2192 %v", request.Method, request.URL.Path, s.peer.ResolveReference(u))
     }
@@ -195,14 +195,14 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
     return
   }
   
-  if OPTIONS.GetFlag(optionsFlagVerbose) {
+  if OPTIONS.GetFlag(OptionsFlagVerbose) {
     log.Printf("%s %s \u2192 {%s}", request.Method, request.URL.Path, strings.Join(candidates, ", "))
   }
   
   for _, e := range candidates {
     if file, err = os.Open(e); err == nil {
       defer file.Close()
-      if !OPTIONS.GetFlag(optionsFlagQuiet) { log.Printf("%s %s \u2192 %s", request.Method, request.URL.Path, e) }
+      if !OPTIONS.GetFlag(OptionsFlagQuiet) { log.Printf("%s %s \u2192 %s", request.Method, request.URL.Path, e) }
       writer.Header().Add("Content-Type", mimetype)
       s.compileAndServeFile(writer, request, file)
       return
