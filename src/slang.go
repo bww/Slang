@@ -32,6 +32,7 @@ package main
 
 import (
   "os"
+  "io"
   "fmt"
   "flag"
   "path/filepath"
@@ -91,7 +92,27 @@ func main() {
  * Initialize config
  */
 func runInit() {
-  // ...
+  configPath := "./slang.conf"
+  
+  if _, err := os.Stat(configPath); err == nil {
+    fmt.Printf("A config file already exists at: %s. Remove it to init a new config file.\n", configPath);
+    return
+  }else if !os.IsNotExist(err) {
+    fmt.Printf("Could not access config file at: %s\n", configPath);
+    return
+  }
+  
+  if infile, err := os.Open(SharedOptions().Resource("conf/default.conf")); err != nil {
+    fmt.Println(err)
+    return
+  }else if outfile, err := os.OpenFile(configPath, os.O_WRONLY | os.O_CREATE, 0644); err != nil {
+    fmt.Println(err)
+    return
+  }else if _, err := io.Copy(outfile, infile); err != nil {
+    fmt.Println(err)
+    return
+  }
+  
 }
 
 /**
@@ -107,6 +128,7 @@ func runServer(port int, peer string, routes map[string]string) {
   }
   
   fmt.Printf("Starting the Slang server on: http://localhost:%d/\n", port)
+  
   if err := server.Run(); err != nil {
     fmt.Println(err)
     return
