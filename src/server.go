@@ -80,6 +80,7 @@ type Server struct {
   root    string
   routes  map[string]string
   proxy   *ReverseProxy
+  strict  bool
 }
 
 /**
@@ -98,7 +99,7 @@ func NewServer(port int, peer, root string, routes map[string]string) (*Server, 
     }
   }
   
-  return &Server{port, peerURL, root, routes, proxy}, nil
+  return &Server{port, peerURL, root, routes, proxy, false}, nil
 }
 
 /**
@@ -165,8 +166,6 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   relative := path.Join(s.root, absolute[1:])
   base := relative[:len(relative) - len(ext)]
   
-  fmt.Println("BASE", base)
-  
   switch ext {
     case ".css":
       candidates = []string{ base +".min.scss", base +".scss", base +".min.css", relative }
@@ -212,10 +211,7 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
     }
   }
   
-  // make this a flag or something...
-  strict := false
-  
-  if strict || s.proxy == nil {
+  if s.strict || s.proxy == nil {
     s.serveError(writer, request, http.StatusNotFound, fmt.Errorf("No such resource: %s", request.URL.Path))
   }else{
     s.proxyRequest(writer, request)
