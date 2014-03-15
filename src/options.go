@@ -59,10 +59,12 @@ var __options *Options
  * Options
  */
 type Options struct {
-  home      string
-  Flags     int
-  Routes    map[string]string
-  Server    ServerOptions
+  home        string
+  Flags       int
+  Routes      map[string]string
+  Server      ServerOptions
+  Stylesheet  StylesheetOptions
+  Javascript  StylesheetOptions
 }
 
 /**
@@ -72,6 +74,20 @@ type ServerOptions struct {
   Port      int                   `toml:"port"`
   Proxy     string                `toml:"proxy"`
   Root      string                `toml:"root"`
+}
+
+/**
+ * Stylesheet options
+ */
+type StylesheetOptions struct {
+  Minify    int                   `toml:"minify"`
+}
+
+/**
+ * Javascript options
+ */
+type JavascriptOptions struct {
+  Minify    int                   `toml:"minify"`
 }
 
 /**
