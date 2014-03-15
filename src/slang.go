@@ -56,14 +56,13 @@ func main() {
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
-  // do init if requested
-  if(*fInit){
-    runInit()
-    return
-  }
-  
   // initialize our options
   options := InitOptions(*fConfig)
+  
+  // do init if requested and exit
+  if(*fInit){
+    runInit(); return
+  }
   
   // server config
   if *fPort != options.Server.Port {
