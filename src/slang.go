@@ -56,6 +56,12 @@ func main() {
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   cmdline.Parse(os.Args[1:]);
   
+  // do init if requested
+  if(*fInit){
+    runInit()
+    return
+  }
+  
   // initialize our options
   options := InitOptions(*fConfig)
   
@@ -78,9 +84,7 @@ func main() {
   if *fDebug    { options.SetFlag(OptionsFlagDebug,   *fDebug   && !options.GetFlag(OptionsFlagQuiet)) }
   
   // do something useful
-  if(*fInit){
-    runInit()
-  }else if(*fServer){
+  if(*fServer){
     runServer(options.Server.Port, options.Server.Proxy, options.Routes)
   }else{
     runCompile(cmdline)
@@ -112,6 +116,8 @@ func runInit() {
     fmt.Println(err)
     return
   }
+  
+  fmt.Printf("Default configuration created at: %s\n", configPath);
   
 }
 
