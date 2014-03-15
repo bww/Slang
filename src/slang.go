@@ -38,8 +38,6 @@ import (
   "path/filepath"
 )
 
-var OPTIONS *Options
-
 func main() {
   
   // process the command line
@@ -206,10 +204,10 @@ func compileResource(context *Context, input *os.File, info os.FileInfo) error {
   inpath := input.Name()
   
   if !CanCompile(context, inpath) {
-    if !OPTIONS.GetFlag(OptionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
+    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
     return nil
   }else{
-    if !OPTIONS.GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
+    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
   }
   
   if compiler, err := NewCompiler(context, inpath); err != nil {
