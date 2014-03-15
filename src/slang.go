@@ -86,7 +86,7 @@ func main() {
   if(*fServer){
     runServer(options.Server.Port, options.Server.Proxy, options.Routes)
   }else{
-    runCompile(cmdline)
+    runCompile(cmdline.Args())
   }
   
 }
@@ -144,9 +144,7 @@ func runServer(port int, peer string, routes map[string]string) {
 /**
  * Compile
  */
-func runCompile(cmdline *flag.FlagSet) {
-  
-  args := cmdline.Args()
+func runCompile(args []string) {
   
   if len(args) < 1 {
     fmt.Println("No resources provided to compile. Run Slang as one of the following.")
