@@ -77,6 +77,7 @@ var MANAGED_EXTENSIONS = map[string]bool {
 type Server struct {
   port    int
   peer    *url.URL
+  root    string
   routes  map[string]string
   proxy   *ReverseProxy
 }
@@ -84,7 +85,7 @@ type Server struct {
 /**
  * Create a server
  */
-func NewServer(port int, peer string, routes map[string]string) (*Server, error) {
+func NewServer(port int, peer, root string, routes map[string]string) (*Server, error) {
   var proxy *ReverseProxy = nil
   var peerURL *url.URL = nil
   
@@ -97,7 +98,7 @@ func NewServer(port int, peer string, routes map[string]string) (*Server, error)
     }
   }
   
-  return &Server{port, peerURL, routes, proxy}, nil
+  return &Server{port, peerURL, root, routes, proxy}, nil
 }
 
 /**
@@ -161,8 +162,10 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   }
   
   ext := path.Ext(absolute)
-  relative := absolute[1:]
+  relative := path.Join(s.root, absolute[1:])
   base := relative[:len(relative) - len(ext)]
+  
+  fmt.Println("BASE", base)
   
   switch ext {
     case ".css":

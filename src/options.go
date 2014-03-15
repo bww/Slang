@@ -71,6 +71,7 @@ type Options struct {
 type ServerOptions struct {
   Port      int                   `toml:"port"`
   Proxy     string                `toml:"proxy"`
+  Root      string                `toml:"root"`
 }
 
 /**

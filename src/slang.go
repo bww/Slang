@@ -46,6 +46,7 @@ func main() {
   fServer   := cmdline.Bool   ("server",  false,  "Run the built-in server.")
   fPort     := cmdline.Int    ("port",    9090,   "The port on which to run the built-in server.")
   fProxy    := cmdline.String ("proxy",   "",     "The base URL the built-in server should reverse-proxy for unmanaged resources.")
+  fDocRoot  := cmdline.String ("root",    ".",    "The document root under which to find managed resources.")
   fQuiet    := cmdline.Bool   ("quiet",   false,  "Be quiet. Only print error messages. (Overrides -verbose, -debug)")
   fVerbose  := cmdline.Bool   ("verbose", false,  "Be more verbose.")
   fDebug    := cmdline.Bool   ("debug",   false,  "Be extremely verbose.")
@@ -59,7 +60,7 @@ func main() {
   
   // do init if requested and exit
   if(*fInit){
-    runInit(); return
+    runInit(options); return
   }
   
   // server config
@@ -68,6 +69,9 @@ func main() {
   }
   if *fProxy != "" {
     options.Server.Proxy = *fProxy
+  }
+  if *fDocRoot != "." {
+    options.Server.Root = *fDocRoot
   }
   
   // routes definitions
@@ -82,9 +86,9 @@ func main() {
   
   // do something useful
   if(*fServer){
-    runServer(options.Server.Port, options.Server.Proxy, options.Routes)
+    runServer(options, cmdline.Args())
   }else{
-    runCompile(cmdline.Args())
+    runCompile(options, cmdline.Args())
   }
   
 }
@@ -92,7 +96,7 @@ func main() {
 /**
  * Initialize config
  */
-func runInit() {
+func runInit(options *Options) {
   configPath := "./slang.conf"
   
   if _, err := os.Stat(configPath); err == nil {
@@ -121,16 +125,29 @@ func runInit() {
 /**
  * Service
  */
-func runServer(port int, peer string, routes map[string]string) {
+func runServer(options *Options, args []string) {
   var server *Server
+  var root string
   var err error
   
-  if server, err = NewServer(port, peer, routes); err != nil {
+  if len(args) > 0 {
+    root = args[0]
+  }else if options.Server.Root != "" {
+    root = options.Server.Root
+  }else{
+    root = "."
+  }
+  
+  if server, err = NewServer(options.Server.Port, options.Server.Proxy, root, options.Routes); err != nil {
     fmt.Println(err)
     return
   }
   
-  fmt.Printf("Starting the Slang server on: http://localhost:%d/\n", port)
+  if options.Server.Proxy != "" {
+    fmt.Printf("Starting the Slang server: http://localhost:%d/ <-> %s\n", options.Server.Port, options.Server.Proxy)
+  }else{
+    fmt.Printf("Starting the Slang server: http://localhost:%d/\n", options.Server.Port)
+  }
   
   if err := server.Run(); err != nil {
     fmt.Println(err)
@@ -142,7 +159,7 @@ func runServer(port int, peer string, routes map[string]string) {
 /**
  * Compile
  */
-func runCompile(args []string) {
+func runCompile(options *Options, args []string) {
   
   if len(args) < 1 {
     fmt.Println("No resources provided to compile. Run Slang as one of the following.")
