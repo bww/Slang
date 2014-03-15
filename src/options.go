@@ -64,7 +64,7 @@ type Options struct {
   Routes      map[string]string
   Server      ServerOptions
   Stylesheet  StylesheetOptions
-  Javascript  StylesheetOptions
+  Javascript  JavascriptOptions
 }
 
 /**
@@ -80,25 +80,27 @@ type ServerOptions struct {
  * Stylesheet options
  */
 type StylesheetOptions struct {
-  Minify    int                   `toml:"minify"`
+  Minify    bool                  `toml:"minify"`
 }
 
 /**
  * Javascript options
  */
 type JavascriptOptions struct {
-  Minify    int                   `toml:"minify"`
+  Minify    bool                  `toml:"minify"`
 }
 
 /**
  * Config
  */
 type config struct {
-  Quiet     bool                  `toml:"quiet"`
-  Verbose   bool                  `toml:"verbose"`
-  Debug     bool                  `toml:"debug"`
-  Server    ServerOptions         `toml:"server"`
-  Routes    map[string]string     `toml:"routes"`
+  Quiet       bool                `toml:"quiet"`
+  Verbose     bool                `toml:"verbose"`
+  Debug       bool                `toml:"debug"`
+  Server      ServerOptions       `toml:"server"`
+  Routes      map[string]string   `toml:"routes"`
+  Stylesheet  StylesheetOptions   `toml:"stylesheet"`
+  Javascript  JavascriptOptions   `toml:"javascript"`
 }
 
 /**
@@ -147,6 +149,10 @@ func InitOptions(configPath string) (*Options) {
     
     // initialize server config
     options.Server = conf.Server
+    // initialize JS config
+    options.Javascript = conf.Javascript
+    // initialize CSS config
+    options.Stylesheet = conf.Stylesheet
     // initialize routes
     options.Routes = conf.Routes
     
