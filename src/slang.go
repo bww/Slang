@@ -266,6 +266,7 @@ func compileResource(context *Context, info os.FileInfo, inpath, outpath string,
     return err
   }
   
+  // if we aren't provided an explicit output stream, open the output file and use that
   if output == nil {
     outfile, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0644)
     if err != nil {
@@ -325,19 +326,18 @@ func (w Walker) relocateResource(path string) (string, error) {
  * Compile a resource
  */
 func (w Walker) compileResource(path string, info os.FileInfo, err error) error {
+  hidden := info.Name() != "." && info.Name()[0] == '.'
   
   if err != nil {
     return err
   }else if path == w.inbase {
-    return nil // ignore the input base path
+    return nil // just descend into the input base path
   }
   
   outpath, err := w.relocateResource(path)
   if err != nil {
     return err
   }
-  
-  hidden := info.Name() != "." && info.Name()[0] == '.'
   
   if info.Mode().IsDir() {
     if hidden {
