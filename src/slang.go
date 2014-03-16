@@ -52,7 +52,7 @@ func main() {
   fRoutes     := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   
-  //fOutput     := cmdline.String ("output",      "./slang",  "Specify the path to write compiled resources to.")
+  fOutput     := cmdline.String ("output",      "./slang",  "Specify the path to write compiled resources to.")
   //fCopy       := cmdline.Bool   ("copy",        false,      "Copy unmanaged resources to output when compiling.")
   
   fMinify     := cmdline.Bool   ("minify",      false,      "Minify resources that can be minified.")
@@ -103,7 +103,7 @@ func main() {
   if(*fServer){
     runServer(options, cmdline.Args())
   }else{
-    runCompile(options, cmdline.Args())
+    runCompile(options, *fOutput, cmdline.Args())
   }
   
 }
@@ -174,7 +174,7 @@ func runServer(options *Options, args []string) {
 /**
  * Compile
  */
-func runCompile(options *Options, args []string) {
+func runCompile(options *Options, outbase string, args []string) {
   
   if len(args) < 1 {
     fmt.Println("No resources provided to compile. Run Slang as one of the following.")
@@ -212,7 +212,7 @@ func runCompile(options *Options, args []string) {
     }
     
     if fstat.Mode().IsDir() {
-      w := &Walker{}
+      w := &Walker{f, outbase}
       if err := filepath.Walk(input.Name(), w.compileResource); err != nil {
         fmt.Println(err)
         return
@@ -260,7 +260,8 @@ func compileResource(context *Context, input *os.File, info os.FileInfo) error {
  * Walk context
  */
 type Walker struct {
-  // ...
+  inbase    string
+  outbase   string
 }
 
 /**
