@@ -224,11 +224,18 @@ func runCompile(options *Options, outbase string, args []string) {
         return
       }
     }else{
+      w := &Walker{filepath.Dir(f), outbase}
+      if err := filepath.Walk(input.Name(), w.compileResource); err != nil {
+        fmt.Println(err)
+        return
+      }
+      /*
       c := NewContext()
       if err := compileResource(c, fstat, input, os.Stdout); err != nil {
         fmt.Println(err)
         return
       }
+      */
     }
     
   }
@@ -306,6 +313,13 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
   
   if err != nil {
     return err
+  }else if path == w.inbase {
+    return nil // ignore the input base path
+  }
+  
+  outpath, err := w.relocateResource(path)
+  if err != nil {
+    return err
   }
   
   hidden := info.Name() != "." && info.Name()[0] == '.'
@@ -313,6 +327,10 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
   if info.Mode().IsDir() {
     if hidden {
       return filepath.SkipDir // skip hidden directories
+    }else if strings.HasPrefix(path, w.outbase) {
+      return filepath.SkipDir // skip the tree under the output root
+    }else if err := os.Mkdir(outpath, 0755); err != nil && !os.IsExist(err) {
+      return err // could not create output directory
     }else{
       return nil // just descend
     }
@@ -320,12 +338,6 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
   
   if hidden {
     return nil // skip hidden files
-  }
-  
-  if v, err := w.relocateResource(path); err != nil {
-    return err
-  }else{
-    fmt.Println("IN", path, "OUT", v)
   }
   
   input, err := os.Open(path)

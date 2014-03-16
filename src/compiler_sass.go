@@ -67,6 +67,8 @@ func (c SassCompiler) OutputPath(context *Context, inpath string) (string, error
   switch ext {
     case ".scss":
       return inpath[:len(inpath)-len(ext)] +".css", nil
+    case ".css":
+      return inpath, nil
     default:
       return "", fmt.Errorf("Invalid input file extension: %s", ext)
   }
