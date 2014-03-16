@@ -95,8 +95,8 @@ type Compiler interface {
  * Determine if a resource can be compiled
  */
 func CanCompile(context *Context, inpath string) bool {
-  switch fullExtension(inpath) {
-    case ".min.scss", ".scss", ".min.js", ".ejs", ".min.ejs":
+  switch path.Ext(inpath) {
+    case ".scss", ".css", ".ejs", ".js":
       return true
     default:
       return false
@@ -107,19 +107,32 @@ func CanCompile(context *Context, inpath string) bool {
  * Create the default compiler for the specified file
  */
 func NewCompiler(context *Context, inpath string) (Compiler, error) {
-  switch fullExtension(inpath) {
-    case ".min.scss", ".min.css":
-      return &SassCompiler{sassOptionCompress}, nil
-    case ".scss":
-      return &SassCompiler{}, nil
-    case ".min.ejs":
-      return CompilerChain([]Compiler{ &EJSCompiler{}, &JSMinCompiler{} }), nil
+  switch path.Ext(inpath) {
+    
+    case ".scss", ".css":
+      if SharedOptions().Stylesheet.Minify {
+        return &SassCompiler{sassOptionCompress}, nil
+      }else{
+        return &SassCompiler{}, nil
+      }
+      
     case ".ejs":
-      return &EJSCompiler{}, nil
-    case ".min.js":
-      return &JSMinCompiler{}, nil 
+      if SharedOptions().Javascript.Minify {
+        return CompilerChain([]Compiler{ &EJSCompiler{}, &JSMinCompiler{} }), nil
+      }else{
+        return &EJSCompiler{}, nil
+      }
+      
+    case ".js":
+      if SharedOptions().Javascript.Minify {
+        return &JSMinCompiler{}, nil
+      }else{
+        return &LiteralCompiler{}, nil
+      }
+      
     default:
       return &LiteralCompiler{}, nil
+      
   }
 }
 

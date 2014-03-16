@@ -120,7 +120,7 @@ func (s *Server) Run() error {
  * Handle a request
  */
 func (s *Server) handler(writer http.ResponseWriter, request *http.Request) {
-  if strings.ToUpper(request.Method) == "GET" && MANAGED_EXTENSIONS[path.Ext(request.URL.Path)] {
+  if request.Method == "GET" && CanCompile(nil, request.URL.Path) {
     s.serveRequest(writer, request)
   }else{
     s.proxyRequest(writer, request)
@@ -168,9 +168,9 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   
   switch ext {
     case ".css":
-      candidates = []string{ base +".min.scss", base +".scss", base +".min.css", relative }
+      candidates = []string{ base +".scss", relative }
     case ".js":
-      candidates = []string{ base +".min.ejs", base +".ejs", base +".min.js", relative }
+      candidates = []string{ base +".ejs", relative }
     default:
       candidates = []string{ relative }
   }
