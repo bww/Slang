@@ -137,7 +137,7 @@ type config struct {
 /**
  * Initialize options
  */
-func InitOptions(configPath string) (*Options) {
+func InitOptions(configPath string, inputPaths []string) (*Options) {
   var requireConfig bool
   options := &Options{}
   
