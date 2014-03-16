@@ -245,8 +245,9 @@ func runCompile(options *Options, outbase string, args []string) {
 /**
  * Compile a resource
  */
-func compileResource(context *Context, info os.FileInfo, input *os.File, output io.Writer) error {
-  inpath := input.Name()
+func compileResource(context *Context, info os.FileInfo, inpath, outpath string, input *os.File, output io.Writer) error {
+  var compiler Compiler
+  var err error
   
   if !CanCompile(context, inpath) {
     if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
@@ -255,18 +256,32 @@ func compileResource(context *Context, info os.FileInfo, input *os.File, output 
     if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
   }
   
-  if compiler, err := NewCompiler(context, inpath); err != nil {
+  compiler, err = NewCompiler(context, inpath)
+  if err != nil {
     return err
-  }else if outpath, err := compiler.OutputPath(context, inpath); err != nil {
-    return err
-  }else if output, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0644); err != nil {
-    return err
-  }else if err := compiler.Compile(context, inpath, outpath, input, output); err != nil {
-    return err
-  }else{
-    return nil
   }
   
+  outpath, err = compiler.OutputPath(context, outpath)
+  if err != nil {
+    return err
+  }
+  
+  if output == nil {
+    outfile, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0644)
+    if err != nil {
+      return err
+    }else{
+      defer outfile.Close()
+    }
+    output = outfile
+  }
+  
+  err = compiler.Compile(context, inpath, outpath, input, output)
+  if err != nil {
+    return err
+  }
+  
+  return nil
 }
 
 /**
@@ -334,10 +349,10 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
     }else{
       return nil // just descend
     }
-  }
-  
-  if hidden {
-    return nil // skip hidden files
+  }else{
+    if hidden {
+      return nil // skip hidden files
+    }
   }
   
   input, err := os.Open(path)
@@ -347,7 +362,7 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
     defer input.Close()
   }
   
-  return compileResource(NewContext(), info, input, os.Stdout)
+  return compileResource(NewContext(), info, input.Name(), outpath, input, nil)
 }
 
 
