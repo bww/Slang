@@ -57,8 +57,8 @@ type JSMinCompiler struct {
 func (c JSMinCompiler) OutputPath(context *Context, inpath string) (string, error) {
   ext := fullExtension(inpath)
   switch ext {
-    case ".min.js":
-      return inpath[:len(inpath)-len(ext)] +".js", nil
+    case ".js":
+      return inpath, nil
     default:
       return "", fmt.Errorf("Invalid input file extension: %s", ext)
   }

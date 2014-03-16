@@ -42,23 +42,27 @@ func main() {
   
   // process the command line
   cmdline     := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  fConfig     := cmdline.String ("config",      "",     "Specify a particular configuration to use.")
-  fInit       := cmdline.Bool   ("init",        false,  "Initialize a Slang configuration file in the current directory.")
+  fConfig     := cmdline.String ("config",      "",         "Specify a particular configuration to use.")
+  fInit       := cmdline.Bool   ("init",        false,      "Initialize a Slang configuration file in the current directory.")
   
-  fServer     := cmdline.Bool   ("server",      false,  "Run the built-in server.")
-  fPort       := cmdline.Int    ("port",        9090,   "The port on which to run the built-in server.")
-  fProxy      := cmdline.String ("proxy",       "",     "The base URL the built-in server should reverse-proxy for unmanaged resources.")
-  fDocRoot    := cmdline.String ("root",        ".",    "The document root under which to find managed resources.")
+  fServer     := cmdline.Bool   ("server",      false,      "Run the built-in server.")
+  fPort       := cmdline.Int    ("port",        9090,       "The port on which to run the built-in server.")
+  fProxy      := cmdline.String ("proxy",       "",         "The base URL the built-in server should reverse-proxy for unmanaged resources.")
+  fDocRoot    := cmdline.String ("root",        ".",        "The document root under which to find managed resources.")
   fRoutes     := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   
-  fMinify     := cmdline.Bool   ("minify",      false,  "Minify resources that can be minified.")
-  fMinifyCSS  := cmdline.Bool   ("css:minify",  false,  "Minify stylesheets resources.")
-  fMinifyJS   := cmdline.Bool   ("js:minify",   false,  "Minify Javascript resources.")
+  //fOutput     := cmdline.String ("output",      "./slang",  "Specify the path to write compiled resources to.")
+  //fCopy       := cmdline.Bool   ("copy",        false,      "Copy unmanaged resources to output when compiling.")
   
-  fQuiet      := cmdline.Bool   ("quiet",       false,  "Be quiet. Only print error messages. (Overrides -verbose, -debug)")
-  fVerbose    := cmdline.Bool   ("verbose",     false,  "Be more verbose.")
-  fDebug      := cmdline.Bool   ("debug",       false,  "Be extremely verbose.")
+  fMinify     := cmdline.Bool   ("minify",      false,      "Minify resources that can be minified.")
+  fMinifyCSS  := cmdline.Bool   ("css:minify",  false,      "Minify stylesheets resources.")
+  fMinifyJS   := cmdline.Bool   ("js:minify",   false,      "Minify Javascript resources.")
+  fShip       := cmdline.Bool   ("ship",        false,      "Turn on all presets for shipping a project.")
+  
+  fQuiet      := cmdline.Bool   ("quiet",       false,      "Be quiet. Only print error messages. (Overrides -verbose, -debug)")
+  fVerbose    := cmdline.Bool   ("verbose",     false,      "Be more verbose.")
+  fDebug      := cmdline.Bool   ("debug",       false,      "Be extremely verbose.")
   
   cmdline.Parse(os.Args[1:]);
   
@@ -87,8 +91,8 @@ func main() {
   }
   
   // compilation options
-  if *fMinify || *fMinifyCSS { options.Stylesheet.Minify = true }
-  if *fMinify || *fMinifyJS  { options.Javascript.Minify = true }
+  if *fShip || *fMinify || *fMinifyCSS { options.Stylesheet.Minify = true }
+  if *fShip || *fMinify || *fMinifyJS  { options.Javascript.Minify = true }
   
   // apply command line flags
   if *fQuiet    { options.SetFlag(OptionsFlagQuiet,     *fQuiet) }

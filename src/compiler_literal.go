@@ -46,7 +46,7 @@ type LiteralCompiler struct {
  * Output path
  */
 func (c LiteralCompiler) OutputPath(context *Context, inpath string) (string, error) {
-  return fmt.Sprintf("%s.webasm", inpath), nil
+  return fmt.Sprintf("%s.slang", inpath), nil
 }
 
 /**

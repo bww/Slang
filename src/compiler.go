@@ -109,11 +109,18 @@ func CanCompile(context *Context, inpath string) bool {
 func NewCompiler(context *Context, inpath string) (Compiler, error) {
   switch path.Ext(inpath) {
     
-    case ".scss", ".css":
+    case ".scss":
       if SharedOptions().Stylesheet.Minify {
         return &SassCompiler{sassOptionCompress}, nil
       }else{
         return &SassCompiler{}, nil
+      }
+      
+    case ".css":
+      if SharedOptions().Stylesheet.Minify {
+        return &SassCompiler{sassOptionCompress}, nil
+      }else{
+        return &LiteralCompiler{}, nil
       }
       
     case ".ejs":
