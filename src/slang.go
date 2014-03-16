@@ -35,6 +35,7 @@ import (
   "io"
   "fmt"
   "flag"
+  "strings"
   "path/filepath"
 )
 
@@ -95,9 +96,9 @@ func main() {
   if *fShip || *fMinify || *fMinifyJS  { options.Javascript.Minify = true }
   
   // apply command line flags
-  if *fQuiet    { options.SetFlag(OptionsFlagQuiet,     *fQuiet) }
-  if *fVerbose  { options.SetFlag(OptionsFlagVerbose,   *fVerbose && !options.GetFlag(OptionsFlagQuiet)) }
-  if *fDebug    { options.SetFlag(OptionsFlagDebug,     *fDebug   && !options.GetFlag(OptionsFlagQuiet)) }
+  if *fQuiet    { options.SetFlag(OptionsFlagQuiet,   *fQuiet) }
+  if *fVerbose  { options.SetFlag(OptionsFlagVerbose, *fVerbose && !options.GetFlag(OptionsFlagQuiet)) }
+  if *fDebug    { options.SetFlag(OptionsFlagDebug,   *fDebug   && !options.GetFlag(OptionsFlagQuiet)) }
   
   // do something useful
   if(*fServer){
@@ -194,6 +195,11 @@ func runCompile(options *Options, outbase string, args []string) {
     return
   }
   
+  if err := os.MkdirAll(outbase, 0755); err != nil {
+    fmt.Println(err)
+    return
+  }
+  
   for _, f := range args {
     var input *os.File
     var fstat os.FileInfo
@@ -219,7 +225,7 @@ func runCompile(options *Options, outbase string, args []string) {
       }
     }else{
       c := NewContext()
-      if err := compileResource(c, input, fstat); err != nil {
+      if err := compileResource(c, fstat, input, os.Stdout); err != nil {
         fmt.Println(err)
         return
       }
@@ -232,7 +238,7 @@ func runCompile(options *Options, outbase string, args []string) {
 /**
  * Compile a resource
  */
-func compileResource(context *Context, input *os.File, info os.FileInfo) error {
+func compileResource(context *Context, info os.FileInfo, input *os.File, output io.Writer) error {
   inpath := input.Name()
   
   if !CanCompile(context, inpath) {
@@ -265,6 +271,35 @@ type Walker struct {
 }
 
 /**
+ * Relocate a resource from the input base to the output base
+ */
+func (w Walker) relocateResource(path string) (string, error) {
+  
+  absin, err := filepath.Abs(w.inbase)
+  if err != nil {
+    return "", fmt.Errorf("Could not make input base absolute: %s", path)
+  }
+  
+  absout, err := filepath.Abs(w.outbase)
+  if err != nil {
+    return "", fmt.Errorf("Could not make output base absolute: %s", path)
+  }
+  
+  abspath, err := filepath.Abs(path)
+  if err != nil {
+    return "", fmt.Errorf("Could not make input path absolute: %s", path)
+  }
+  
+  if len(abspath) <= len(absin) {
+    return "", fmt.Errorf("Input path is not under input base: %s", path)
+  }else if !strings.HasPrefix(abspath, absin) {
+    return "", fmt.Errorf("Input path is not under input base: %s", path)
+  }
+  
+  return filepath.Join(absout, abspath[len(absin)+1:]), nil
+}
+
+/**
  * Compile a resource
  */
 func (w Walker) compileResource(path string, info os.FileInfo, err error) error {
@@ -287,6 +322,12 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
     return nil // skip hidden files
   }
   
+  if v, err := w.relocateResource(path); err != nil {
+    return err
+  }else{
+    fmt.Println("IN", path, "OUT", v)
+  }
+  
   input, err := os.Open(path)
   if err != nil {
     return err
@@ -294,7 +335,7 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
     defer input.Close()
   }
   
-  return compileResource(NewContext(), input, info)
+  return compileResource(NewContext(), info, input, os.Stdout)
 }
 
 
