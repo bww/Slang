@@ -43,7 +43,7 @@ func main() {
   
   // process the command line
   cmdline     := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-  fConfig     := cmdline.String ("config",      "",         "Specify a particular configuration to use.")
+  fConfig     := cmdline.String ("conf",        "",         "Specify a particular configuration to use.")
   fInit       := cmdline.Bool   ("init",        false,      "Initialize a Slang configuration file in the current directory.")
   
   fServer     := cmdline.Bool   ("server",      false,      "Run the built-in server.")
@@ -54,7 +54,7 @@ func main() {
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   
   fOutput     := cmdline.String ("output",      "./slang",  "Specify the path to write compiled resources to.")
-  //fCopy       := cmdline.Bool   ("copy",        false,      "Copy unmanaged resources to output when compiling.")
+  fCopy       := cmdline.Bool   ("copy",        false,      "Copy unmanaged resources to output when compiling.")
   
   fMinify     := cmdline.Bool   ("minify",      false,      "Minify resources that can be minified.")
   fMinifyCSS  := cmdline.Bool   ("css:minify",  false,      "Minify stylesheets resources.")
@@ -94,6 +94,9 @@ func main() {
   // compilation options
   if *fShip || *fMinify || *fMinifyCSS { options.Stylesheet.Minify = true }
   if *fShip || *fMinify || *fMinifyJS  { options.Javascript.Minify = true }
+  
+  // unmanaged resource options
+  if *fCopy { options.Unmanaged.Copy = true }
   
   // apply command line flags
   if *fQuiet    { options.SetFlag(OptionsFlagQuiet,   *fQuiet) }
@@ -243,18 +246,27 @@ func runCompile(options *Options, outbase string, args []string) {
 }
 
 /**
+ * Process a resource
+ */
+func processResource(context *Context, info os.FileInfo, inpath, outpath string, input *os.File, output io.Writer) error {
+  if CanCompile(context, inpath) {
+    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
+    return compileResource(context, info, inpath, outpath, input, output)
+  }else if SharedOptions().Unmanaged.ShouldCopy(inpath) {
+    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[~] %s\n", inpath) }
+    return copyResource(context, info, inpath, outpath, input, output)
+  }else{
+    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
+    return nil
+  }
+}
+
+/**
  * Compile a resource
  */
 func compileResource(context *Context, info os.FileInfo, inpath, outpath string, input *os.File, output io.Writer) error {
   var compiler Compiler
   var err error
-  
-  if !CanCompile(context, inpath) {
-    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
-    return nil
-  }else{
-    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
-  }
   
   compiler, err = NewCompiler(context, inpath)
   if err != nil {
@@ -279,6 +291,30 @@ func compileResource(context *Context, info os.FileInfo, inpath, outpath string,
   
   err = compiler.Compile(context, inpath, outpath, input, output)
   if err != nil {
+    return err
+  }
+  
+  return nil
+}
+
+/**
+ * Copy a resource
+ */
+func copyResource(context *Context, info os.FileInfo, inpath, outpath string, input *os.File, output io.Writer) error {
+  
+  // if we aren't provided an explicit output stream, open the output file and use that
+  if output == nil {
+    outfile, err := os.OpenFile(outpath, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0644)
+    if err != nil {
+      return err
+    }else{
+      defer outfile.Close()
+    }
+    output = outfile
+  }
+  
+  // copy our resource over
+  if _, err := io.Copy(output, input); err != nil {
     return err
   }
   
@@ -362,7 +398,7 @@ func (w Walker) compileResource(path string, info os.FileInfo, err error) error 
     defer input.Close()
   }
   
-  return compileResource(NewContext(), info, input.Name(), outpath, input, nil)
+  return processResource(NewContext(), info, input.Name(), outpath, input, nil)
 }
 
 

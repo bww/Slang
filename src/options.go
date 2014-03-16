@@ -34,9 +34,10 @@ import "fmt"
 
 import (
   "os"
+  "strings"
+  "io/ioutil"
   "path"
   "path/filepath"
-  "io/ioutil"
 )
 
 import (
@@ -65,6 +66,7 @@ type Options struct {
   Server      ServerOptions
   Stylesheet  StylesheetOptions
   Javascript  JavascriptOptions
+  Unmanaged   UnmanagedOptions
 }
 
 /**
@@ -91,6 +93,34 @@ type JavascriptOptions struct {
 }
 
 /**
+ * Unmanaged options
+ */
+type UnmanagedOptions struct {
+  Copy      bool                  `toml:"copy"`
+  Exclude   []string              `toml:"exclude_from_copy"`
+}
+
+/**
+ * Determine whether a file should be copied
+ */
+func (u UnmanagedOptions) ShouldCopy(inpath string) bool {
+  if u.Copy {
+    if u.Exclude == nil || len(u.Exclude) < 1 {
+      return true
+    }else{
+      ext := strings.ToLower(path.Ext(inpath))
+      for _, ex := range u.Exclude {
+        if ext == strings.ToLower(ex) {
+          return false
+        }
+      }
+      return true
+    }
+  }
+  return false
+}
+
+/**
  * Config
  */
 type config struct {
@@ -101,6 +131,7 @@ type config struct {
   Routes      map[string]string   `toml:"routes"`
   Stylesheet  StylesheetOptions   `toml:"stylesheet"`
   Javascript  JavascriptOptions   `toml:"javascript"`
+  Unmanaged   UnmanagedOptions    `toml:"unmanaged"`
 }
 
 /**
@@ -153,6 +184,8 @@ func InitOptions(configPath string) (*Options) {
     options.Javascript = conf.Javascript
     // initialize CSS config
     options.Stylesheet = conf.Stylesheet
+    // initialize unmanaged config
+    options.Unmanaged = conf.Unmanaged
     // initialize routes
     options.Routes = conf.Routes
     
