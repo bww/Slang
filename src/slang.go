@@ -39,14 +39,26 @@ import (
   "path/filepath"
 )
 
+const (
+  COMMAND_INIT    = "init"
+  COMMAND_RUN     = "run"
+  COMMAND_BUILD   = "build"
+)
+
 func main() {
+  
+  if len(os.Args) < 2 {
+    runHelp()
+    return
+  }
+  
+  // note the command
+  command     := os.Args[1]
   
   // process the command line
   cmdline     := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
   fConfig     := cmdline.String ("conf",        "",             "Specify a particular configuration to use.")
-  fInit       := cmdline.Bool   ("init",        false,          "Initialize a Slang configuration file in the current directory.")
   
-  fServer     := cmdline.Bool   ("server",      false,          "Run the built-in server.")
   fPort       := cmdline.Int    ("port",        9090,           "The port on which to run the built-in server.")
   fProxy      := cmdline.String ("proxy",       "",             "The base URL the built-in server should reverse-proxy for unmanaged resources.")
   fDocRoot    := cmdline.String ("root",        ".",            "The document root under which to find managed resources.")
@@ -65,13 +77,13 @@ func main() {
   fVerbose    := cmdline.Bool   ("verbose",     false,          "Be more verbose.")
   fDebug      := cmdline.Bool   ("debug",       false,          "Be extremely verbose.")
   
-  cmdline.Parse(os.Args[1:]);
+  cmdline.Parse(os.Args[2:])
   
   // initialize our options
   options := InitOptions(*fConfig, cmdline.Args())
   
   // do init if requested and exit
-  if(*fInit){
+  if command == COMMAND_INIT {
     runInit(options); return
   }
   
@@ -104,11 +116,43 @@ func main() {
   if *fDebug    { options.SetFlag(OptionsFlagDebug,   *fDebug   && !options.GetFlag(OptionsFlagQuiet)) }
   
   // do something useful
-  if(*fServer){
+  if command == COMMAND_RUN {
     runServer(options, cmdline.Args())
-  }else{
+  }else if command == COMMAND_BUILD {
     runCompile(options, *fOutput, cmdline.Args())
+  }else{
+    runHelp()
   }
+  
+}
+
+/**
+ * Display help info
+ */
+func runHelp() {
+  
+  fmt.Println("Usage: slang (run|build|init) [options]");
+  fmt.Println(" Help: slang -h");
+  
+  /*
+  fmt.Println("No resources provided to compile. Run Slang as one of the following.")
+  fmt.Println()
+  fmt.Println("Initialize an optional slang.conf file:")
+  fmt.Println("  $ slang -init")
+  fmt.Println()
+  fmt.Println("Start the built-in server:")
+  fmt.Println("  $ slang -server [...]")
+  fmt.Println()
+  fmt.Println("Compile specific assets:")
+  fmt.Println("  $ slang -output compiled file.scss file.ejs")
+  fmt.Println()
+  fmt.Println("Traverse a directory and compile all supported assets found in it:")
+  fmt.Println("  $ slang -output compiled assets")
+  fmt.Println()
+  fmt.Println("Show command line options:")
+  fmt.Println("  $ slang -h")
+  fmt.Println()
+  */
   
 }
 
@@ -179,27 +223,6 @@ func runServer(options *Options, args []string) {
  * Compile
  */
 func runCompile(options *Options, outbase string, args []string) {
-  
-  if len(args) < 1 {
-    fmt.Println("No resources provided to compile. Run Slang as one of the following.")
-    fmt.Println()
-    fmt.Println("Initialize an optional slang.conf file:")
-    fmt.Println("  $ slang -init")
-    fmt.Println()
-    fmt.Println("Start the built-in server:")
-    fmt.Println("  $ slang -server [...]")
-    fmt.Println()
-    fmt.Println("Compile specific assets:")
-    fmt.Println("  $ slang -output compiled file.scss file.ejs")
-    fmt.Println()
-    fmt.Println("Traverse a directory and compile all supported assets found in it:")
-    fmt.Println("  $ slang -output compiled assets")
-    fmt.Println()
-    fmt.Println("Show command line options:")
-    fmt.Println("  $ slang -h")
-    fmt.Println()
-    return
-  }
   
   if err := os.MkdirAll(outbase, 0755); err != nil {
     fmt.Println(err)
