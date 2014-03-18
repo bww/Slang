@@ -50,6 +50,8 @@ import (
 	"time"
 )
 
+import "fmt"
+
 // onExitFlushLoop is a callback set by tests to detect the state of the
 // flushLoop() goroutine.
 var onExitFlushLoop func()
@@ -168,6 +170,10 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) erro
 		}
 		outreq.Header.Set("X-Forwarded-For", clientIP)
 	}
+	
+	// fix the host in the backend request
+	outreq.Header.Set("Host", outreq.URL.Host)
+	outreq.Host = outreq.URL.Host
 	
 	res, err := transport.RoundTrip(outreq)
 	if err != nil {
