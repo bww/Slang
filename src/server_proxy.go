@@ -50,8 +50,6 @@ import (
 	"time"
 )
 
-import "fmt"
-
 // onExitFlushLoop is a callback set by tests to detect the state of the
 // flushLoop() goroutine.
 var onExitFlushLoop func()
