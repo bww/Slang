@@ -61,7 +61,6 @@ func main() {
   
   fPort       := cmdline.Int    ("port",        9090,           "The port on which to run the built-in server.")
   fProxy      := cmdline.String ("proxy",       "",             "The base URL the built-in server should reverse-proxy for unmanaged resources.")
-  fDocRoot    := cmdline.String ("root",        ".",            "The document root under which to find managed resources.")
   fRoutes     := make(AssocParams)
   cmdline.Var(&fRoutes, "route", "Routing rules, formatted as '<remote>=<local>'; e.g., slang -server -route /css=/styles -route /js=/app/js [...].")
   
@@ -93,9 +92,6 @@ func main() {
   }
   if *fProxy != "" {
     options.Server.Proxy = *fProxy
-  }
-  if *fDocRoot != "." {
-    options.Server.Root = *fDocRoot
   }
   
   // routes definitions
