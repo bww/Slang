@@ -140,7 +140,9 @@ func (s *Server) proxyRequest(writer http.ResponseWriter, request *http.Request)
   
   if s.proxy == nil {
     s.serveError(writer, request, http.StatusBadGateway, fmt.Errorf("No proxy is configured for non-managed resource: %s", request.URL.Path))
-  }else if err := s.proxy.ServeHTTP(writer, request); err != nil {
+  }else if err := s.proxy.ServeHTTP(writer, request); err == FileNotFoundError {
+    s.serveRequestWithOptions(writer, request, false) // attempt to serve the local version
+  }else if err != nil {
     s.serveError(writer, request, http.StatusBadGateway, err)
   }
   
@@ -187,6 +189,13 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
  * Serve a request
  */
 func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request) {
+  s.serveRequestWithOptions(writer, request, true)
+}
+
+/**
+ * Serve a request
+ */
+func (s *Server) serveRequestWithOptions(writer http.ResponseWriter, request *http.Request, allowProxy bool) {
   var candidates []string
   var mimetype string
   var file *os.File
@@ -211,7 +220,7 @@ func (s *Server) serveRequest(writer http.ResponseWriter, request *http.Request)
     }
   }
   
-  if s.strict || s.proxy == nil {
+  if !allowProxy || s.strict || s.proxy == nil {
     s.serveError(writer, request, http.StatusNotFound, fmt.Errorf("No such resource: %s", request.URL.Path))
   }else{
     s.proxyRequest(writer, request)

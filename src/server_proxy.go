@@ -42,12 +42,17 @@ package main
 
 import (
 	"io"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+)
+
+var (
+  FileNotFoundError = fmt.Errorf("404/File Not Found")
 )
 
 // onExitFlushLoop is a callback set by tests to detect the state of the
@@ -176,8 +181,16 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) erro
 	res, err := transport.RoundTrip(outreq)
 	if err != nil {
 		return err
+	}else{
+	  defer res.Body.Close()
 	}
-	defer res.Body.Close()
+	
+	// 404 is handled specially; we return an error and allow the server to
+	// attempt to locate the resource elsewhere instead of writing the response
+	// back to the client
+	if res.StatusCode == http.StatusNotFound {
+	  return FileNotFoundError
+	}
 	
 	copyHeader(rw.Header(), res.Header)
 	rw.WriteHeader(res.StatusCode)
