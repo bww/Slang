@@ -76,7 +76,7 @@ When running in server mode during development these conventions are reversed. I
 
 	<link rel="stylesheet" href="css/style.css" />
 
-The Slang server will check for the following resources, in order. The first resource it encounteres will be compiled as appropriate and responded with:
+The Slang server will check for the following resources, in order. The first resource it encounters will be compiled as appropriate and responded with:
 
 1. `css/style.min.scss`
 2. `css/style.scss`
