@@ -1,51 +1,78 @@
 Slang
 ======
 
-A thing that builds websites.
+Slang is a web server for web developers. It deals with managing, compiling, and transforming resources and coordinating between local and remote files. You just edit and refresh.
 
 About
 -----
 
-*Slang* includes a specialized built-in server that compiles and serves assets as they are requested. You can test your site directly from this server or you can run Slang in tandem with whatever app server you use.
+Slang is a specialized web server that compiles and serves static assets (like SCSS, Javascript, etc) as they are requested. It can act as a reverse proxy to another server and allow you to view a project as a combination of local files on your computer (so you can easily edit them) and resources on a remote server (which may be out of your control or a hassle to get up and running locally).
 
-When you make requests to the Slang server it determines whether that request is for a resource that Slang manages (such as SCSS, EJS, JS files) and, if so, it compiles and responds with that resource.
+You can use Slang to do some handy things:
 
-Requests for resources that Slang does not manage directly (such as HTML) are either reverse-proxied to your app server (if so configured) or copied from disk without modification.
+* Test a static site locally and have your SCSS, CSS, JS, etc, automatically compiled when you refresh,
+* Test google.com, but with some CSS you're editing locally,
+* Test HTML generate by whatever app server you use but with SCSS you need updated for each request when you refresh.
+
+When you make requests to the Slang server it determines whether that request is for a resource that Slang manages (such as SCSS, CSS, EJS, JS files) and if so, it compiles and responds with that resource. Requests for resources that Slang does not manage directly (such as HTML) are either reverse-proxied to another server (if so configured) or copied from disk without modification.
+
+Currently Slang can manage these file types, with more to come:
+
+* **SCSS** can be compiled and minified
+* **CSS** can be minified
+* **Extended Javascript** (see below) can be compiled an minified
+* **Javascript** can be minified
 
 Running Slang
 --------------
 
 If you are only have static assets, you can start the Slang server by running the following command.
 
-	$ slang -server
+	$ slang run
 
-If you are using Slang in tandem with an app server you need to provide the URL to the app server it will reverse proxy.
+If you are using Slang in tandem with another server (such as an app server that is providing the HTML) you need to provide the URL that it will reverse-proxy.
 
-	$ slang -server -proxy http://localhost:8080/
+	$ slang run -proxy http://localhost:8080/
 
-In either case Slang looks for resources relative to the directory you run it in. If your app server maps any assets that Slang manages to a different path than they exist in the filesystem, you can provide explicit route mappings.
+In either case Slang looks for resources relative to the directory you provide as an argument to `run`, or in the directory you run it in if you don't specify one.
 
-	$ slang -server -proxy http://localhost:8080/ -route /assets/css=/stylesheets
+
+Running Slang: Slightly more advanced edition
+---------------------------------------------
+
+### Routes
+
+If your app server maps any assets that Slang manages to a path other than where they exist in the filesystem, you can provide explicit route mappings.
+
+	$ slang run -proxy http://localhost:8080/ -route /assets/css=/stylesheets
 
 In this example, the URL `http://localhost:9090/assets/css/style.css` would be mapped to the file at `./stylesheets/style.css`.
 
-Packaging Projects
-------------------
+### Using a Config File
 
-The built-in Slang server compiles assets in memory but does not write them to disk. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
+Routes, along with most other things, can also be configured in a `slang.conf` to save you some typing every time you start Slang up. To generate a default configuration file that you can customize, use the following command.
 
-To package your project, simply point Slang at the root under which your assets are located.
+	$ slang init
 
-	$ slang ./assets
+Slang will create a default configuration file called `slang.conf` in the current directory. When Slang starts up it checks for a `slang.conf` file in the current directory and, if it finds one, loads settings from it. You can override settings in your configuration on the command line.
 
-Slang will traverse the directory and compile any supported assets it encounters. For example, a file named `assets/site.ejs` will be compiled by Slang and written to `assets/site.js`. Take care when naming your files, any file already existing at an output path will be overwritten.
+
+Packaging Your Project
+----------------------
+
+The Slang server compiles assets in memory and serves them up but it does not write them to disk. When you're ready to deploy your project you'll need to generate static versions of all your managed assets.
+
+To package your project use the `build` command and point Slang at the root under which your files are located. This may be the same directory you run the Slang server in.
+
+	$ slang build -output ./ship ./assets
+
+Slang will traverse the directory `./assets`, compile any supported assets it encounters, and write the result to a corresponding location under `./ship`. For example, a file named `assets/css/site.scss` will be compiled by Slang and written to `ship/css/site.css`.
+
 
 What Gets Processed
 -------------------
 
-Slang will process all the file types it understands for you. Currently that includes SASS, EJS, and Javascript files.
-
-Slang does not require you to maintain an explicit configuration file, it knows what to do based on some well-established conventions. As a result, *you must take care to follow these conventions* when naming your files or Slang will not work as expected.
+Slang will process all the file types it understands for you. Currently that includes SASS, CSS, EJS, and Javascript files.
 
 ### Output Formats
 
