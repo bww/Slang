@@ -33,6 +33,7 @@ package main
 import (
   "io"
   "fmt"
+  "path"
   "unsafe"
   "io/ioutil"
 )
@@ -55,7 +56,7 @@ type JSMinCompiler struct {
  * Output path
  */
 func (c JSMinCompiler) OutputPath(context *Context, inpath string) (string, error) {
-  ext := fullExtension(inpath)
+  ext := path.Ext(inpath)
   switch ext {
     case ".js":
       return inpath, nil
