@@ -12,6 +12,7 @@ SLANG=../slang
 all: $(SLANG)
 
 $(SLANG): $(SOURCES) $(LIBRARY)
+	echo $(CC)
 	go build -o $(SLANG)
 
 clean:
