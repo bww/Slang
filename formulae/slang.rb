@@ -13,6 +13,8 @@ class Slang < Formula
     system "make"
     # install Slang
     bin.install("slang")
+    # install resources here...
+    share.install("resources")
   end
   
 end

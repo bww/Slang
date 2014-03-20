@@ -43,12 +43,13 @@ const (
   COMMAND_INIT    = "init"
   COMMAND_RUN     = "run"
   COMMAND_BUILD   = "build"
+  COMMAND_HELP    = "help"
 )
 
 func main() {
   
   if len(os.Args) < 2 {
-    runHelp()
+    runHelp(nil, false)
     return
   }
   
@@ -116,8 +117,10 @@ func main() {
     runServer(options, cmdline.Args())
   }else if command == COMMAND_BUILD {
     runCompile(options, *fOutput, cmdline.Args())
+  }else if command == COMMAND_HELP {
+    runHelp(cmdline, true)
   }else{
-    runHelp()
+    runHelp(nil, false)
   }
   
 }
@@ -125,30 +128,30 @@ func main() {
 /**
  * Display help info
  */
-func runHelp() {
+func runHelp(cmdline *flag.FlagSet, detail bool) {
   
-  fmt.Println("Usage: slang (run|build|init) [options]");
-  fmt.Println(" Help: slang -h");
+  if !detail {
+    fmt.Println("Usage: slang (run|build|init) [options]");
+    fmt.Println(" Help: slang help");
+  }else{
+    fmt.Println("Usage: slang (run|build|init) [options]");
+    fmt.Println()
+    fmt.Println("Initialize an optional slang.conf file:")
+    fmt.Println("  $ slang init")
+    fmt.Println()
+    fmt.Println("Start the built-in server:")
+    fmt.Println("  $ slang run [./docroot]")
+    fmt.Println()
+    fmt.Println("Traverse a directory and compile all supported assets found in it:")
+    fmt.Println("  $ slang build -output ./build ./assets")
+    fmt.Println()
+  }
   
-  /*
-  fmt.Println("No resources provided to compile. Run Slang as one of the following.")
-  fmt.Println()
-  fmt.Println("Initialize an optional slang.conf file:")
-  fmt.Println("  $ slang -init")
-  fmt.Println()
-  fmt.Println("Start the built-in server:")
-  fmt.Println("  $ slang -server [...]")
-  fmt.Println()
-  fmt.Println("Compile specific assets:")
-  fmt.Println("  $ slang -output compiled file.scss file.ejs")
-  fmt.Println()
-  fmt.Println("Traverse a directory and compile all supported assets found in it:")
-  fmt.Println("  $ slang -output compiled assets")
-  fmt.Println()
-  fmt.Println("Show command line options:")
-  fmt.Println("  $ slang -h")
-  fmt.Println()
-  */
+  if cmdline != nil {
+    fmt.Println("Options:")
+    cmdline.PrintDefaults()
+    fmt.Println()
+  }
   
 }
 

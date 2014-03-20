@@ -1,5 +1,6 @@
 
 export CC 		:= clang
+export CXX 		:= clang++
 export LIBDIR := $(shell pwd)/../lib
 export GOPATH := $(GOPATH):$(LIBDIR)
 export CGO_LDFLAGS := -lc -lc++ -L../dep/libsass -lsass -L../dep/jsmin -ljsmin
