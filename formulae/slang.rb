@@ -6,6 +6,8 @@ class Slang < Formula
   homepage 'https://github.com/bww/Slang'
   version '1'
   
+  depends_on 'go'
+  
   def install
     # build Slang
     system "make"
