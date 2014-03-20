@@ -5,6 +5,7 @@ all: golib
 
 golib:
 	go get github.com/BurntSushi/toml
+	go get bitbucket.org/kardianos/osext
 
 clean:
 	cd libsass && make clean

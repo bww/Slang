@@ -42,6 +42,7 @@ import (
 
 import (
   "github.com/BurntSushi/toml"
+  "bitbucket.org/kardianos/osext"
 )
 
 const (
@@ -142,7 +143,9 @@ func InitOptions(configPath string, inputPaths []string) (*Options) {
   options := &Options{}
   
   // where are we?
-  home, err := filepath.Abs(filepath.Dir(filepath.Join(os.Args[0], "..")))
+  binary, err := osext.Executable()
+  if err != nil { panic(err) }
+  home, err := filepath.Abs(filepath.Dir(filepath.Join(binary, "..")))
   if err != nil { panic(err) }
   
   // home directory

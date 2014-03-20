@@ -6,7 +6,7 @@ class Slang < Formula
   
   url 'https://github.com/bww/Slang.git'
   homepage 'https://github.com/bww/Slang'
-  version '3'
+  version '1'
   
   depends_on 'go'
   
@@ -14,9 +14,9 @@ class Slang < Formula
     # build Slang
     system "make"
     # install Slang
-    bin.install("slang")
+    bin.install("bin/slang")
     # install resources here...
-    share.install("resources/slang")
+    share.install("share/slang")
   end
   
 end
