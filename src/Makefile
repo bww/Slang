@@ -7,12 +7,13 @@ export CGO_LDFLAGS := -lc -lc++ -L../dep/libsass -lsass -L../dep/jsmin -ljsmin
 
 SOURCES=slang.go flags.go options.go compiler.go compiler_chain.go compiler_sass.go compiler_jsmin.go compiler_ejs.go compiler_literal.go server.go server_proxy.go
 LIBRARY=$(LIBDIR)/src/ejs/scanner.go $(LIBDIR)/src/bww/errors/errors.go
-SLANG=../slang
+BIN=../bin
+SLANG=$(BIN)/slang
 
 all: $(SLANG)
 
 $(SLANG): $(SOURCES) $(LIBRARY)
-	echo $(CC)
+	mkdir -p $(BIN)
 	go build -o $(SLANG)
 
 clean:

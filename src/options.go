@@ -142,7 +142,7 @@ func InitOptions(configPath string, inputPaths []string) (*Options) {
   options := &Options{}
   
   // where are we?
-  home, err := filepath.Abs(filepath.Dir(os.Args[0]))
+  home, err := filepath.Abs(filepath.Dir(filepath.Join(os.Args[0], "..")))
   if err != nil { panic(err) }
   
   // home directory
@@ -224,7 +224,7 @@ func (o *Options) Home() string {
  * Obtain a resource path
  */
 func (o *Options) Resource(relative string) string {
-  return path.Join(o.home, "resources", relative)
+  return path.Join(o.home, "share/slang", relative)
 }
 
 /**

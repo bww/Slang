@@ -2,9 +2,11 @@ require 'formula'
 
 class Slang < Formula
   
+  env :std # this is necessary for CGO, apparently
+  
   url 'https://github.com/bww/Slang.git'
   homepage 'https://github.com/bww/Slang'
-  version '1'
+  version '2'
   
   depends_on 'go'
   
@@ -14,7 +16,7 @@ class Slang < Formula
     # install Slang
     bin.install("slang")
     # install resources here...
-    share.install("resources")
+    share.install("resources/slang")
   end
   
 end
