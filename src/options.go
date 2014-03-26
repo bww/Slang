@@ -30,10 +30,10 @@
 
 package main
 
-import "fmt"
-
 import (
   "os"
+  "fmt"
+  "log"
   "strings"
   "io/ioutil"
   "path"
@@ -84,6 +84,7 @@ type ServerOptions struct {
  */
 type StylesheetOptions struct {
   Minify    bool                  `toml:"minify"`
+  Exclude   []string              `toml:"exclude"`
 }
 
 /**
@@ -91,6 +92,7 @@ type StylesheetOptions struct {
  */
 type JavascriptOptions struct {
   Minify    bool                  `toml:"minify"`
+  Exclude   []string              `toml:"exclude"`
 }
 
 /**
@@ -231,7 +233,7 @@ func (o *Options) Resource(relative string) string {
 }
 
 /**
- * Set or unset a flag
+ * Get a flag
  */
 func (o *Options) GetFlag(flag int) bool {
   return (o.Flags & flag) == flag
@@ -248,4 +250,35 @@ func (o *Options) SetFlag(flag int, set bool) {
   }
 }
 
+/**
+ * Determine whether the specified resource should be excluded from compilation
+ */
+func (o *Options) ShouldExclude(resource string) bool {
+  switch path.Ext(resource) {
+    case ".scss", ".css":
+      return o.shouldExclude(resource, o.Stylesheet.Exclude)
+    case ".ejs", ".js":
+      return o.shouldExclude(resource, o.Javascript.Exclude)
+    default:
+      return false
+  }
+}
+
+/**
+ * Determine whether the specified resource should be excluded from compilation
+ */
+func (o *Options) shouldExclude(resource string, patterns []string) bool {
+  name := path.Base(resource)
+  
+  for _, p := range patterns {
+    if match, err := path.Match(p, name); err != nil {
+      log.Printf("ERROR: exclude resource shell pattern is invalid: '%s' %v; ignoring", p, err)
+      return false
+    }else if match {
+      return true
+    }
+  }
+  
+  return false
+}
 

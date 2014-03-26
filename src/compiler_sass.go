@@ -101,7 +101,12 @@ func (c SassCompiler) Compile(context *Context, inpath, outpath string, input io
     options.output_style = C.SASS_STYLE_EXPANDED
   }
   
-  options.include_paths = C.SASS_EMTPY_STRING
+  // use the input path's directory as our include path
+  indir := path.Dir(inpath)
+  includePath := C.CString(indir)
+  defer C.free(unsafe.Pointer(includePath))
+  
+  options.include_paths = includePath
   options.image_path = C.SASS_EMTPY_STRING
   
   sass.options = options
