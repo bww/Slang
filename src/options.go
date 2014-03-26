@@ -113,8 +113,8 @@ func (u UnmanagedOptions) ShouldCopy(inpath string) bool {
   if u.Copy {
     if u.Exclude == nil || len(u.Exclude) < 1 {
       return true
-    }else if shouldExclude(inpath, u.Exclude) {
-      return false
+    }else  {
+      return !shouldExclude(inpath, u.Exclude)
     }
   }
   return false
@@ -234,6 +234,11 @@ func (o *Options) loadOptions(configPath string) error {
     return fmt.Errorf("Configuration is not valid: %v", err)
   }
   
+  // initialize options
+  if conf.Quiet != nil    { o.SetFlag(OptionsFlagQuiet,   *conf.Quiet) }
+  if conf.Verbose != nil  { o.SetFlag(OptionsFlagVerbose, *conf.Verbose && !o.GetFlag(OptionsFlagQuiet)) }
+  if conf.Debug != nil    { o.SetFlag(OptionsFlagDebug,   *conf.Debug   && !o.GetFlag(OptionsFlagQuiet)) }
+  
   // initialize server config
   if conf.Server.Port != nil  { o.Server.Port = *conf.Server.Port }
   if conf.Server.Proxy != nil { o.Server.Proxy = *conf.Server.Proxy }
@@ -252,14 +257,16 @@ func (o *Options) loadOptions(configPath string) error {
   if conf.Unmanaged.Exclude != nil { o.Unmanaged.Exclude = append(o.Unmanaged.Exclude, *conf.Unmanaged.Exclude...) }
   
   // initialize routes
-  for k, v := range conf.Routes {
-    o.Routes[k] = v
+  if o.Routes == nil {
+    o.Routes = make(map[string]string)
   }
   
-  // initialize options
-  if conf.Quiet != nil    { o.SetFlag(OptionsFlagQuiet,   *conf.Quiet) }
-  if conf.Verbose != nil  { o.SetFlag(OptionsFlagVerbose, *conf.Verbose && !o.GetFlag(OptionsFlagQuiet)) }
-  if conf.Debug != nil    { o.SetFlag(OptionsFlagDebug,   *conf.Debug   && !o.GetFlag(OptionsFlagQuiet)) }
+  // merge routes
+  if conf.Routes != nil {
+    for k, v := range conf.Routes {
+      o.Routes[k] = v
+    }
+  }
   
   return nil
 }
