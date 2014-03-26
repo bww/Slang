@@ -34,7 +34,6 @@ import (
   "os"
   "fmt"
   "log"
-  "strings"
   "io/ioutil"
   "path"
   "path/filepath"
@@ -50,6 +49,10 @@ const (
   OptionsFlagQuiet      = 1 << 0
   OptionsFlagVerbose    = 1 << 1
   OptionsFlagDebug      = 1 << 2
+)
+
+const (
+  CONFIG_PATH_DEFAULT   = "./slang.conf"
 )
 
 /**
@@ -110,14 +113,8 @@ func (u UnmanagedOptions) ShouldCopy(inpath string) bool {
   if u.Copy {
     if u.Exclude == nil || len(u.Exclude) < 1 {
       return true
-    }else{
-      ext := strings.ToLower(path.Ext(inpath))
-      for _, ex := range u.Exclude {
-        if ext == strings.ToLower(ex) {
-          return false
-        }
-      }
-      return true
+    }else if shouldExclude(inpath, u.Exclude) {
+      return false
     }
   }
   return false
@@ -127,14 +124,47 @@ func (u UnmanagedOptions) ShouldCopy(inpath string) bool {
  * Config
  */
 type config struct {
-  Quiet       bool                `toml:"quiet"`
-  Verbose     bool                `toml:"verbose"`
-  Debug       bool                `toml:"debug"`
-  Server      ServerOptions       `toml:"server"`
+  Quiet       *bool               `toml:"quiet"`
+  Verbose     *bool               `toml:"verbose"`
+  Debug       *bool               `toml:"debug"`
+  Server      serverConfig        `toml:"server"`
   Routes      map[string]string   `toml:"routes"`
-  Stylesheet  StylesheetOptions   `toml:"stylesheet"`
-  Javascript  JavascriptOptions   `toml:"javascript"`
-  Unmanaged   UnmanagedOptions    `toml:"unmanaged"`
+  Stylesheet  stylesheetConfig    `toml:"stylesheet"`
+  Javascript  javascriptConfig    `toml:"javascript"`
+  Unmanaged   unmanagedConfig     `toml:"unmanaged"`
+}
+
+/**
+ * Server config
+ */
+type serverConfig struct {
+  Port      *int                  `toml:"port"`
+  Proxy     *string               `toml:"proxy"`
+  Root      *string               `toml:"root"`
+}
+
+/**
+ * Stylesheet config
+ */
+type stylesheetConfig struct {
+  Minify    *bool                 `toml:"minify"`
+  Exclude   *[]string             `toml:"exclude"`
+}
+
+/**
+ * Javascript config
+ */
+type javascriptConfig struct {
+  Minify    *bool                 `toml:"minify"`
+  Exclude   *[]string             `toml:"exclude"`
+}
+
+/**
+ * Unmanaged config
+ */
+type unmanagedConfig struct {
+  Copy      *bool                 `toml:"copy"`
+  Exclude   *[]string             `toml:"exclude_from_copy"`
 }
 
 /**
@@ -157,54 +187,81 @@ func InitOptions(configPath string, inputPaths []string) (*Options) {
   if configPath != "" {
     requireConfig = true
   }else{
-    configPath = "./slang.conf"
+    configPath = CONFIG_PATH_DEFAULT
   }
   
-  // load configuration
-  if file, err := os.Open(configPath); err != nil {
-    
-    // if a config file was explicitly provided, it must exist, otherwise, we just
-    // ignore a missing configuration file and use defaults
-    if requireConfig {
+  // check out our file
+  if _, err := os.Stat(configPath); err != nil {
+    if !os.IsNotExist(err) {
+      fmt.Printf("Could not stat configuration: %v\n", err)
+      os.Exit(-1)
+    }else if requireConfig {
       fmt.Printf("No such configuration: %v\n", err)
       os.Exit(-1)
     }
-    
   }else{
-    defer file.Close()
-    conf := &config{}
-    
-    // load our configuration
-    if c, err := ioutil.ReadAll(file); err != nil {
-      fmt.Printf("Could not read configuration: %v\n", err)
-      os.Exit(-1)
-    }else if _, err := toml.Decode(string(c), conf); err != nil {
-      fmt.Printf("Configuration is not valid: %v\n", err)
+    if err := options.loadOptions(configPath); err != nil {
+      fmt.Println(err)
       os.Exit(-1)
     }
-    
-    // initialize server config
-    options.Server = conf.Server
-    // initialize JS config
-    options.Javascript = conf.Javascript
-    // initialize CSS config
-    options.Stylesheet = conf.Stylesheet
-    // initialize unmanaged config
-    options.Unmanaged = conf.Unmanaged
-    // initialize routes
-    options.Routes = conf.Routes
-    
-    // initialize options
-    options.SetFlag(OptionsFlagQuiet,   conf.Quiet)
-    options.SetFlag(OptionsFlagVerbose, conf.Verbose && !conf.Quiet)
-    options.SetFlag(OptionsFlagDebug,   conf.Debug && !conf.Quiet)
-    
   }
   
   // setup shared options
   __options = options
   
   return options
+}
+
+/**
+ * Load options
+ */
+func (o *Options) loadOptions(configPath string) error {
+  
+  // load configuration
+  file, err := os.Open(configPath)
+  if err != nil {
+    return err
+  }else{
+    defer file.Close()
+  }
+  
+  conf := &config{}
+  
+  // load our configuration
+  if c, err := ioutil.ReadAll(file); err != nil {
+    return fmt.Errorf("Could not read configuration: %v", err)
+  }else if _, err := toml.Decode(string(c), conf); err != nil {
+    return fmt.Errorf("Configuration is not valid: %v", err)
+  }
+  
+  // initialize server config
+  if conf.Server.Port != nil  { o.Server.Port = *conf.Server.Port }
+  if conf.Server.Proxy != nil { o.Server.Proxy = *conf.Server.Proxy }
+  if conf.Server.Root != nil  { o.Server.Root = *conf.Server.Root }
+  
+  // initialize JS config
+  if conf.Javascript.Minify != nil { o.Javascript.Minify = *conf.Javascript.Minify }
+  if conf.Javascript.Exclude != nil { o.Javascript.Exclude = append(o.Javascript.Exclude, *conf.Javascript.Exclude...) }
+  
+  // initialize CSS config
+  if conf.Stylesheet.Minify != nil { o.Stylesheet.Minify = *conf.Stylesheet.Minify }
+  if conf.Stylesheet.Exclude != nil { o.Stylesheet.Exclude = append(o.Stylesheet.Exclude, *conf.Stylesheet.Exclude...) }
+  
+  // initialize unmanaged config
+  if conf.Unmanaged.Copy != nil { o.Unmanaged.Copy = *conf.Unmanaged.Copy }
+  if conf.Unmanaged.Exclude != nil { o.Unmanaged.Exclude = append(o.Unmanaged.Exclude, *conf.Unmanaged.Exclude...) }
+  
+  // initialize routes
+  for k, v := range conf.Routes {
+    o.Routes[k] = v
+  }
+  
+  // initialize options
+  if conf.Quiet != nil    { o.SetFlag(OptionsFlagQuiet,   *conf.Quiet) }
+  if conf.Verbose != nil  { o.SetFlag(OptionsFlagVerbose, *conf.Verbose && !o.GetFlag(OptionsFlagQuiet)) }
+  if conf.Debug != nil    { o.SetFlag(OptionsFlagDebug,   *conf.Debug   && !o.GetFlag(OptionsFlagQuiet)) }
+  
+  return nil
 }
 
 /**
@@ -256,9 +313,9 @@ func (o *Options) SetFlag(flag int, set bool) {
 func (o *Options) ShouldExclude(resource string) bool {
   switch path.Ext(resource) {
     case ".scss", ".css":
-      return o.shouldExclude(resource, o.Stylesheet.Exclude)
+      return shouldExclude(resource, o.Stylesheet.Exclude)
     case ".ejs", ".js":
-      return o.shouldExclude(resource, o.Javascript.Exclude)
+      return shouldExclude(resource, o.Javascript.Exclude)
     default:
       return false
   }
@@ -267,7 +324,7 @@ func (o *Options) ShouldExclude(resource string) bool {
 /**
  * Determine whether the specified resource should be excluded from compilation
  */
-func (o *Options) shouldExclude(resource string, patterns []string) bool {
+func shouldExclude(resource string, patterns []string) bool {
   name := path.Base(resource)
   
   for _, p := range patterns {
