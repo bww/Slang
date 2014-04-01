@@ -41,7 +41,7 @@ import (
 /*
 #include <string.h>
 #include <stdlib.h>
-#include "../dep/jsmin/slang_jsmin.h"
+#include "../../dep/jsmin/slang_jsmin.h"
 */
 import "C"
 

@@ -41,7 +41,7 @@ import (
 /*
 #include <string.h>
 #include <stdlib.h>
-#include "../dep/libsass/sass_interface.h"
+#include "../../dep/libsass/sass_interface.h"
 
 const char *SASS_EMTPY_STRING = "";
 */
