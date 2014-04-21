@@ -274,9 +274,14 @@ func runCompile(options *Options, outbase string, args []string) {
  * Process a resource
  */
 func processResource(context *Context, info os.FileInfo, inpath, outpath string, input *os.File, output io.Writer) error {
-  if CanCompile(context, inpath) && !SharedOptions().ShouldExclude(inpath) {
-    if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
-    return compileResource(context, info, inpath, outpath, input, output)
+  if CanCompile(context, inpath) {
+    if !SharedOptions().ShouldExclude(inpath) {
+      if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[+] %s\n", inpath) }
+      return compileResource(context, info, inpath, outpath, input, output)
+    }else{
+      if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[ ] %s\n", inpath) }
+      return nil
+    }
   }else if SharedOptions().Unmanaged.ShouldCopy(inpath) {
     if !SharedOptions().GetFlag(OptionsFlagQuiet) { fmt.Printf("[~] %s\n", inpath) }
     return copyResource(context, info, inpath, outpath, input, output)

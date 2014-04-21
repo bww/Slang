@@ -7,19 +7,9 @@ BIN=bin
 SLANG=$(BIN)/slang
 
 SOURCES=\
-	src/main/slang.go \
-	src/main/flags.go \
-	src/main/options.go \
-	src/main/compiler.go \
-	src/main/compiler_chain.go \
-	src/main/compiler_sass.go \
-	src/main/compiler_jsmin.go \
-	src/main/compiler_ejs.go \
-	src/main/compiler_literal.go \
-	src/main/server.go \
-	src/main/server_proxy.go \
-	src/ejs/scanner.go \
-	src/bww/errors/errors.go
+	src/main/*.go \
+	src/ejs/*.go \
+	src/bww/errors/*.go
 
 all: deps $(SLANG)
 
