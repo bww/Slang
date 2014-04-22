@@ -1,5 +1,5 @@
 
-export BUILD 	:= $(shell pwd)
+export BUILD 	:= $(PWD)
 export GOPATH := $(GOPATH):$(BUILD)
 
 OS=$(shell uname -s)
@@ -20,6 +20,8 @@ SOURCES=\
 	src/main/*.go \
 	src/ejs/*.go \
 	src/bww/errors/*.go
+
+.PHONY all deps install clean cleanall
 
 all: deps $(SLANG)
 
