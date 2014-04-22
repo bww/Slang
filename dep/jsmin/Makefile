@@ -1,4 +1,5 @@
-CC = clang
+
+CC = cc
 CCFLAGS = -Wall -O2 -lc
 LDFLAGS =
 
