@@ -1,7 +1,7 @@
 
 CC = cc
-CCFLAGS = -Wall -O2 -lc
-LDFLAGS =
+CCFLAGS = -Wall -O2 -lc -fPIC -g
+LDFLAGS = -fPIC
 
 PREFIX    = /usr/local
 LIBDIR    = $(PREFIX)/lib
