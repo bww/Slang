@@ -1,6 +1,6 @@
 
 CC = cc
-CCFLAGS = -Wall -O2 -lc -fPIC -g
+CFLAGS = -Wall -O2 -fPIC -g
 LDFLAGS = -fPIC
 
 PREFIX    = /usr/local
@@ -20,11 +20,11 @@ libjsmin.a: $(OBJECTS)
 libjsmin.so: $(OBJECTS)
 	$(CC) -shared $(LDFLAGS) -o $@ $(OBJECTS)
 
-%.o: %.cpp
-	$(CC) $(CCFLAGS) -c -o $@ $<
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 %: %.o libjsmin.a
-	$(CC) $(CCFLAGS) -o $@ $+ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $+ $(LDFLAGS)
 
 clean:
 	rm -f $(OBJECTS) *.a *.so
