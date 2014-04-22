@@ -1,4 +1,6 @@
 
+PREFIX=/opt/slang
+
 .PHONY: all static shared install clean
 
 all: static
@@ -12,8 +14,8 @@ shared:
 	cd jsmin && make shared
 
 install: shared
-	install -D libsass/libsass.so /opt/slang/lib/libsass.so
-	install -D jsmin/libjsmin.so /opt/slang/lib/libjsmin.so
+	install -D libsass/libsass.so $(PREFIX)/lib/libsass.so
+	install -D jsmin/libjsmin.so $(PREFIX)/lib/libjsmin.so
 
 clean:
 	cd libsass && make clean

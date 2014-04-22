@@ -14,6 +14,7 @@ endif
 
 BIN=bin
 SLANG=$(BIN)/slang
+PREFIX=/opt/slang
 
 SOURCES=\
 	src/main/*.go \
@@ -23,7 +24,7 @@ SOURCES=\
 all: deps $(SLANG)
 
 deps:
-	cd dep && make $(DEPS_TARGET)
+	cd dep && make PREFIX=$(PREFIX) $(DEPS_TARGET)
 	go get github.com/BurntSushi/toml
 	go get bitbucket.org/kardianos/osext
 
@@ -32,7 +33,7 @@ $(SLANG): $(SOURCES)
 	go build -o $(SLANG) ./src/main
 
 install: $(SLANG)
-	install -D $(SLANG) /opt/slang/bin/slang
+	install -D $(SLANG) $(PREFIX)/bin/slang
 
 clean:
 	rm -f $(SLANG)
