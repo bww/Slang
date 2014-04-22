@@ -5,7 +5,7 @@ export GOPATH := $(GOPATH):$(BUILD)
 OS=$(shell uname -s)
 
 ifeq ($(OS),Linux)
-export CGO_LDFLAGS 	:= -lc -lc++ -L/opt/libsass/lib -lsass -L$(BUILD)/dep/jsmin -ljsmin
+export CGO_LDFLAGS 	:= -L/opt/libsass/lib -lsass -L$(BUILD)/dep/jsmin -ljsmin
 else
 export CGO_LDFLAGS 	:= -lc -lc++ -L$(BUILD)/dep/libsass -lsass -L$(BUILD)/dep/jsmin -ljsmin
 endif
