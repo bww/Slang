@@ -1,22 +1,19 @@
 
-OS=$(shell uname -s)
+.PHONY: all static shared install clean
 
-ifeq ($(OS),Linux)
-TARGET=shared
-else
-TARGET=static
-endif
+all: static
 
-.PHONY: all build install clean
+static:
+	cd libsass && make static
+	cd jsmin && make static
 
-all: build
+shared:
+	cd libsass && make shared
+	cd jsmin && make shared
 
-build:
-	cd libsass && make $(TARGET)
-	cd jsmin && make
-
-install: build
-	install -D libsass/libsass.so /opt/libsass/lib/libsass.so
+install: shared
+	install -D libsass/libsass.so /opt/slang/lib/libsass.so
+	install -D jsmin/libjsmin.so /opt/slang/lib/libjsmin.so
 
 clean:
 	cd libsass && make clean

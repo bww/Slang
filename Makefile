@@ -5,11 +5,11 @@ export GOPATH := $(GOPATH):$(BUILD)
 OS=$(shell uname -s)
 
 ifeq ($(OS),Linux)
-export CGO_LDFLAGS 	:= -L/opt/libsass/lib -lsass -L$(BUILD)/dep/jsmin -ljsmin
+export CGO_LDFLAGS 	:= -L/opt/slang/lib -lsass -ljsmin
 DEPS_TARGET=install
 else
 export CGO_LDFLAGS 	:= -lc -lc++ -L$(BUILD)/dep/libsass -lsass -L$(BUILD)/dep/jsmin -ljsmin
-DEPS_TARGET=build
+DEPS_TARGET=static
 endif
 
 BIN=bin
@@ -30,6 +30,9 @@ deps:
 $(SLANG): $(SOURCES)
 	mkdir -p $(BIN)
 	go build -o $(SLANG) ./src/main
+
+install: $(SLANG)
+	install -D $(SLANG) /opt/slang/bin/slang
 
 clean:
 	rm -f $(SLANG)
