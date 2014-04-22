@@ -21,16 +21,16 @@ SOURCES=\
 	src/ejs/*.go \
 	src/bww/errors/*.go
 
-.PHONY all deps install clean cleanall
+.PHONY: all deps install clean cleanall
 
-all: deps $(SLANG)
+all: $(SLANG)
 
 deps:
 	cd dep && make PREFIX=$(PREFIX) $(DEPS_TARGET)
 	go get github.com/BurntSushi/toml
 	go get bitbucket.org/kardianos/osext
 
-$(SLANG): $(SOURCES)
+$(SLANG): deps $(SOURCES)
 	mkdir -p $(BIN)
 	go build -o $(SLANG) ./src/main
 
