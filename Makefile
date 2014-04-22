@@ -6,8 +6,10 @@ OS=$(shell uname -s)
 
 ifeq ($(OS),Linux)
 export CGO_LDFLAGS 	:= -L/opt/libsass/lib -lsass -L$(BUILD)/dep/jsmin -ljsmin
+DEPS_TARGET=install
 else
 export CGO_LDFLAGS 	:= -lc -lc++ -L$(BUILD)/dep/libsass -lsass -L$(BUILD)/dep/jsmin -ljsmin
+DEPS_TARGET=build
 endif
 
 BIN=bin
@@ -21,7 +23,7 @@ SOURCES=\
 all: deps $(SLANG)
 
 deps:
-	cd dep && make
+	cd dep && make $(DEPS_TARGET)
 	go get github.com/BurntSushi/toml
 	go get bitbucket.org/kardianos/osext
 
