@@ -35,7 +35,7 @@ import (
   "strings"
 )
 
-type AssocParams map[string]string
+type AssocParams map[string][]string
 
 func (a *AssocParams) String() string {
   return fmt.Sprintf("%v", *a)
@@ -44,7 +44,12 @@ func (a *AssocParams) String() string {
 func (a *AssocParams) Set(value string) error {
   if i := strings.Index(value, "="); i > 0 {
     whitespace := " \n"
-    (*a)[strings.Trim(value[:i], whitespace)] = strings.Trim(value[i+1:], whitespace)
+    k := strings.Trim(value[:i], whitespace)
+    if v := (*a)[k]; v != nil {
+      (*a)[k] = append(v, strings.Trim(value[i+1:], whitespace))
+    }else{
+      (*a)[k] = []string{strings.Trim(value[i+1:], whitespace)}
+    }
     return nil
   }else{
     return fmt.Errorf("Parameters must be formatted as '<key>=<value>'")

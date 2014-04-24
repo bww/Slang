@@ -37,6 +37,7 @@ import (
   "io/ioutil"
   "path"
   "path/filepath"
+  "reflect"
 )
 
 import (
@@ -66,7 +67,7 @@ var __options *Options
 type Options struct {
   home        string
   Flags       int
-  Routes      map[string]string
+  Routes      map[string][]string
   Server      ServerOptions
   Stylesheet  StylesheetOptions
   Javascript  JavascriptOptions
@@ -124,47 +125,47 @@ func (u UnmanagedOptions) ShouldCopy(inpath string) bool {
  * Config
  */
 type config struct {
-  Quiet       *bool               `toml:"quiet"`
-  Verbose     *bool               `toml:"verbose"`
-  Debug       *bool               `toml:"debug"`
-  Server      serverConfig        `toml:"server"`
-  Routes      map[string]string   `toml:"routes"`
-  Stylesheet  stylesheetConfig    `toml:"stylesheet"`
-  Javascript  javascriptConfig    `toml:"javascript"`
-  Unmanaged   unmanagedConfig     `toml:"unmanaged"`
+  Quiet       *bool                   `toml:"quiet"`
+  Verbose     *bool                   `toml:"verbose"`
+  Debug       *bool                   `toml:"debug"`
+  Server      serverConfig            `toml:"server"`
+  Routes      map[string]interface{}  `toml:"routes"`
+  Stylesheet  stylesheetConfig        `toml:"stylesheet"`
+  Javascript  javascriptConfig        `toml:"javascript"`
+  Unmanaged   unmanagedConfig         `toml:"unmanaged"`
 }
 
 /**
  * Server config
  */
 type serverConfig struct {
-  Port      *int                  `toml:"port"`
-  Proxy     *string               `toml:"proxy"`
-  Root      *string               `toml:"root"`
+  Port      *int                      `toml:"port"`
+  Proxy     *string                   `toml:"proxy"`
+  Root      *string                   `toml:"root"`
 }
 
 /**
  * Stylesheet config
  */
 type stylesheetConfig struct {
-  Minify    *bool                 `toml:"minify"`
-  Exclude   *[]string             `toml:"exclude"`
+  Minify    *bool                     `toml:"minify"`
+  Exclude   *[]string                 `toml:"exclude"`
 }
 
 /**
  * Javascript config
  */
 type javascriptConfig struct {
-  Minify    *bool                 `toml:"minify"`
-  Exclude   *[]string             `toml:"exclude"`
+  Minify    *bool                     `toml:"minify"`
+  Exclude   *[]string                 `toml:"exclude"`
 }
 
 /**
  * Unmanaged config
  */
 type unmanagedConfig struct {
-  Copy      *bool                 `toml:"copy"`
-  Exclude   *[]string             `toml:"exclude_from_copy"`
+  Copy      *bool                     `toml:"copy"`
+  Exclude   *[]string                 `toml:"exclude_from_copy"`
 }
 
 /**
@@ -258,13 +259,17 @@ func (o *Options) loadOptions(configPath string) error {
   
   // initialize routes
   if o.Routes == nil {
-    o.Routes = make(map[string]string)
+    o.Routes = make(map[string][]string)
   }
   
   // merge routes
   if conf.Routes != nil {
-    for k, v := range conf.Routes {
-      o.Routes[k] = v
+    if routes, err := mapToRoutes(conf.Routes); err != nil {
+      return err
+    }else{
+      for k, v := range routes {
+        o.Routes[k] = v
+      }
     }
   }
   
@@ -344,5 +349,50 @@ func shouldExclude(resource string, patterns []string) bool {
   }
   
   return false
+}
+
+/**
+ * Convert a map of interfaces to a multimap of string -> []string.
+ * Elements in the parameter map must be either string or []string.
+ */
+func mapToRoutes(m map[string]interface{}) (map[string][]string, error) {
+  r := make(map[string][]string)
+  
+  for k, v := range m {
+    switch c := v.(type) {
+      case string:
+        r[k] = []string{c}
+      case []string:
+        r[k] = c
+      case []interface{}:
+        if a, err := arrayToRoutes(c); err != nil {
+          return nil, err
+        }else{
+          r[k] = a
+        }
+      default:
+        return nil, fmt.Errorf("Type is not supported: %v", reflect.TypeOf(v))
+    }
+  }
+  
+  return r, nil
+}
+
+/**
+ * Convert []interface{} to []string. The elements must actually be strings.
+ */
+func arrayToRoutes(a []interface{}) ([]string, error) {
+  r := make([]string, len(a))
+  
+  for i, e := range a {
+    switch c := e.(type) {
+      case string:
+        r[i] = c
+      default:
+        return nil, fmt.Errorf("Type is not supported: %v", reflect.TypeOf(e))
+    }
+  }
+  
+  return r, nil
 }
 

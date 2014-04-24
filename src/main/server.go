@@ -78,7 +78,7 @@ type Server struct {
   port    int
   peer    *url.URL
   root    string
-  routes  map[string]string
+  routes  map[string][]string
   proxy   *ReverseProxy
   strict  bool
 }
@@ -86,7 +86,7 @@ type Server struct {
 /**
  * Create a server
  */
-func NewServer(port int, peer, root string, routes map[string]string) (*Server, error) {
+func NewServer(port int, peer, root string, routes map[string][]string) (*Server, error) {
   var proxy *ReverseProxy = nil
   var peerURL *url.URL = nil
   
@@ -156,25 +156,41 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
   var mimetype string
   
   absolute := request.URL.Path
+  alternates := make([]string, 0)
   
   for k, v := range s.routes {
     if strings.HasPrefix(absolute, k) {
-      absolute = path.Join(v, absolute[len(k):])
-      break
+      for _, e := range v {
+        alternates = append(alternates, path.Join(e, absolute[len(k):]))
+      }
     }
   }
   
   ext := path.Ext(absolute)
-  relative := path.Join(s.root, absolute[1:])
-  base := relative[:len(relative) - len(ext)]
+  relatives := make([]string, len(alternates))
+  bases := make([]string, len(alternates))
+  
+  for i, e := range alternates {
+    r := path.Join(s.root, e[1:])
+    relatives[i] = r
+    bases[i] = r[:len(r) - len(ext)]
+  }
+  
+  extWithBases := func(b []string, ext string) []string {
+    o := make([]string, len(b))
+    for i, e := range b {
+      o[i] = e + ext
+    }
+    return o
+  }
   
   switch ext {
     case ".css":
-      candidates = []string{ base +".scss", relative }
+      candidates = append(extWithBases(bases, ".scss"), relatives...)
     case ".js":
-      candidates = []string{ base +".ejs", relative }
+      candidates = append(extWithBases(bases, ".ejs"), relatives...)
     default:
-      candidates = []string{ relative }
+      candidates = relatives
   }
   
   var ok bool
