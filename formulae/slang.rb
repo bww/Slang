@@ -6,7 +6,7 @@ class Slang < Formula
   
   url 'https://github.com/bww/Slang.git'
   homepage 'https://github.com/bww/Slang'
-  version '2'
+  version '3'
   
   depends_on 'go'
   
