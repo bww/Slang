@@ -39,6 +39,11 @@ import (
   "path/filepath"
 )
 
+import (
+  "io/ioutil"
+  "encoding/json"
+)
+
 const (
   COMMAND_INIT    = "init"
   COMMAND_RUN     = "run"
@@ -59,6 +64,7 @@ func main() {
   // process the command line
   cmdline     := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
   fConfig     := cmdline.String ("conf",        "",             "Specify a particular configuration to use.")
+  fVariables  := cmdline.String ("vars",        "",             "Specify a variable set to use, defined in a JSON file.")
   
   fPort       := cmdline.Int    ("port",        9090,           "The port on which to run the built-in server.")
   fProxy      := cmdline.String ("proxy",       "",             "The base URL the built-in server should reverse-proxy for unmanaged resources.")
@@ -85,6 +91,19 @@ func main() {
   // do init if requested and exit
   if command == COMMAND_INIT {
     runInit(options); return
+  }
+  
+  // variables
+  if *fVariables != "" {
+    variables := make(map[string]interface{})
+    if serial, err := ioutil.ReadFile(*fVariables); err != nil {
+      fmt.Printf("Could not read variables: %v\n", err)
+      return
+    }else if err := json.Unmarshal(serial, &variables); err != nil{
+      fmt.Printf("Variables are not valid: %v\n", err)
+      return
+    }
+    options.Variables = variables
   }
   
   // server config
@@ -257,13 +276,6 @@ func runCompile(options *Options, outbase string, args []string) {
         fmt.Println(err)
         return
       }
-      /*
-      c := NewContext()
-      if err := compileResource(c, fstat, input, os.Stdout); err != nil {
-        fmt.Println(err)
-        return
-      }
-      */
     }
     
   }

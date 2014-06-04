@@ -72,6 +72,7 @@ type Options struct {
   Stylesheet  StylesheetOptions
   Javascript  JavascriptOptions
   Unmanaged   UnmanagedOptions
+  Variables   map[string]interface{}
 }
 
 /**

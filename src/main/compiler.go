@@ -46,6 +46,7 @@ const (
  */
 type Context struct {
   Options   int
+  Variables map[string]interface{}
   visited   map[string]bool
 }
 
@@ -53,7 +54,14 @@ type Context struct {
  * Create a compiler context
  */
 func NewContext() *Context {
-  return &Context{0, make(map[string]bool)}
+  return NewContextWithVariables(SharedOptions().Variables)
+}
+
+/**
+ * Create a compiler context
+ */
+func NewContextWithVariables(v map[string]interface{}) *Context {
+  return &Context{0, v, make(map[string]bool)}
 }
 
 /**
@@ -96,7 +104,7 @@ type Compiler interface {
  */
 func CanCompile(context *Context, inpath string) bool {
   switch path.Ext(inpath) {
-    case ".scss", ".css", ".ejs", ".js":
+    case ".scss", ".css", ".ejs", ".js", ".ghtml", ".html":
       return true
     default:
       return false
@@ -136,6 +144,9 @@ func NewCompiler(context *Context, inpath string) (Compiler, error) {
       }else{
         return &LiteralCompiler{}, nil
       }
+      
+    case ".ghtml":
+      return &TemplateCompiler{}, nil
       
     default:
       return &LiteralCompiler{}, nil

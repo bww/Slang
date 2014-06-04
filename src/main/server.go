@@ -35,6 +35,7 @@ import (
   "fmt"
   "log"
   "path"
+  "time"
   "strings"
 )
 
@@ -58,6 +59,7 @@ var MIMETYPES = map[string]string {
   ".css":   "text/css",
   ".ejs":   "application/javascript",
   ".js":    "application/javascript",
+  ".ghtml": "text/html",
   ".html":  "text/html",
 }
 
@@ -69,6 +71,7 @@ var MANAGED_EXTENSIONS = map[string]bool {
   ".scss":  true,
   ".ejs":   true,
   ".js":    true,
+  ".ghtml": true,
 }
 
 /**
@@ -107,13 +110,22 @@ func NewServer(port int, peer, root string, routes map[string][]string) (*Server
  */
 func (s *Server) Run() error {
   
+  mux := http.NewServeMux()
+  
   if s.proxy != nil {
-    http.HandleFunc("/", s.handler)
+    mux.HandleFunc("/", s.handler)
   }else{
-    http.HandleFunc("/", s.serveRequest)
+    mux.HandleFunc("/", s.serveRequest)
   }
   
-  return http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
+  server := &http.Server{
+    Addr: fmt.Sprintf(":%d", s.port),
+    Handler: mux,
+    ReadTimeout: 30 * time.Second,
+    WriteTimeout: 30 * time.Second,
+  }
+  
+  return server.ListenAndServe()
 }
 
 /**
@@ -176,6 +188,8 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
     bases[i] = r[:len(r) - len(ext)]
   }
   
+  bases = append(bases, path.Join(s.root, absolute[:len(absolute) - len(ext)]))
+  
   extWithBases := func(b []string, ext string) []string {
     o := make([]string, len(b))
     for i, e := range b {
@@ -189,6 +203,8 @@ func (s *Server) routeRequest(request *http.Request) ([]string, string, error) {
       candidates = append(extWithBases(bases, ".scss"), relatives...)
     case ".js":
       candidates = append(extWithBases(bases, ".ejs"), relatives...)
+    case ".html":
+      candidates = append(extWithBases(bases, ".ghtml"), relatives...)
     default:
       candidates = relatives
   }
