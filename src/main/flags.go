@@ -52,7 +52,7 @@ func (a *AssocParams) Set(value string) error {
     }
     return nil
   }else{
-    return fmt.Errorf("Parameters must be formatted as '<key>=<value>'")
+    return fmt.Errorf("Key/value pairs must be formatted as '<key>=<value>'")
   }
 }
 

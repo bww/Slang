@@ -65,6 +65,8 @@ func main() {
   cmdline     := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
   fConfig     := cmdline.String ("conf",        "",             "Specify a particular configuration to use.")
   fVariables  := cmdline.String ("vars",        "",             "Specify a variable set to use, defined in a JSON file.")
+  fDefines    := make(AssocParams)
+  cmdline.Var(&fDefines, "D", "Define a variable as '<ident>=<value>'. This is the equivalent of a top-level variable defined via -vars.")
   
   fPort       := cmdline.Int    ("port",        9090,           "The port on which to run the built-in server.")
   fProxy      := cmdline.String ("proxy",       "",             "The base URL the built-in server should reverse-proxy for unmanaged resources.")
@@ -94,8 +96,10 @@ func main() {
   }
   
   // variables
+  variables := make(map[string]interface{})
+  
+  // load variables
   if *fVariables != "" {
-    variables := make(map[string]interface{})
     if serial, err := ioutil.ReadFile(*fVariables); err != nil {
       fmt.Printf("Could not read variables: %v\n", err)
       return
@@ -103,7 +107,18 @@ func main() {
       fmt.Printf("Variables are not valid: %v\n", err)
       return
     }
-    options.Variables = variables
+  }
+  
+  // use as shared gloabls
+  options.Variables = variables
+  
+  // add variables defined on the command line
+  if len(fDefines) > 0 {
+    for k, v := range fDefines {
+      if len(v) > 0 {
+        options.Variables[k] = v[len(v) - 1] // use the last one
+      }
+    }
   }
   
   // server config
