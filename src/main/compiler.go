@@ -104,7 +104,7 @@ type Compiler interface {
  */
 func CanCompile(context *Context, inpath string) bool {
   switch path.Ext(inpath) {
-    case ".scss", ".css", ".ejs", ".js", ".ghtml", ".html":
+    case ".scss", ".css", ".ejs", ".js", ".ghtml":
       return true
     default:
       return false
