@@ -1,5 +1,5 @@
 
-export BUILD 	:= $(PWD)
+export BUILD 	:= $(CURDIR)
 export GOPATH := $(GOPATH):$(BUILD)
 
 OS=$(shell uname -s)

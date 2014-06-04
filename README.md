@@ -3,6 +3,13 @@ Slang
 
 Slang is a web server for web developers. It deals with managing, compiling, and transforming resources and coordinating between local and remote files. You just edit and refresh.
 
+Getting Slang
+-------------
+
+The easiest way to install Slang is using [Homebrew](http://brew.sh/).
+
+	$ brew install https://github.com/bww/Slang/raw/master/formulae/slang.rb
+
 About
 -----
 
