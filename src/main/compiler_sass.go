@@ -113,7 +113,7 @@ func (c SassCompiler) Compile(context *Context, inpath, outpath string, input io
   C.sass_compile(sass)
   
   if sass.error_status != 0 {
-    return fmt.Errorf("Could not compile SASS: %s", C.GoString(sass.error_message))
+    return fmt.Errorf("Could not compile SASS: %s: %s", inpath, C.GoString(sass.error_message))
   }else if sass.output_string == nil {
     return fmt.Errorf("An unknown error occured; SASS produced no output")
   }else if _, err := output.Write(C.GoBytes(unsafe.Pointer(sass.output_string), C.int(C.strlen(sass.output_string)))); err != nil {
