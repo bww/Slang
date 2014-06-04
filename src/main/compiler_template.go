@@ -80,8 +80,6 @@ func (c TemplateCompiler) Compile(context *Context, inpath, outpath string, inpu
     return fmt.Errorf("Could not parse template: %v\n", err)
   }
   
-  
-  
   if err := t.Execute(output, context.Variables); err != nil {
     return fmt.Errorf("Could not execute template: %v\n", err)
   }
